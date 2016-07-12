@@ -1,0 +1,214 @@
+# depslib dependency file v1.0
+1468251336 source:c:\users\john\desktop\arcproximator\main.c
+	"graphics/my_shader.h"
+	"graphics/my_draw.h"
+	"graphics/my_texture.h"
+	"vec2.h"
+	"mat23.h"
+	"mat4.h"
+	<assert.h>
+	<stdio.h>
+	"my_arc.h"
+	"my_bezier3.h"
+	"color.h"
+	"durand_kerner.h"
+
+1467731762 c:\users\john\desktop\arcproximator\my_arc.h
+	"draw.h"
+
+1468167778 c:\users\john\desktop\arcproximator\draw.h
+	<GL/glew.h>
+	<GL/glut.h>
+	<stdlib.h>
+	"mat23.h"
+	"mat4.h"
+
+1467731766 c:\users\john\desktop\arcproximator\mat23.h
+	"vec2.h"
+
+1467731723 c:\users\john\desktop\arcproximator\vec2.h
+	"util.h"
+
+1468187079 c:\users\john\desktop\arcproximator\util.h
+	<math.h>
+	<stdlib.h>
+	<string.h>
+
+1468245905 c:\users\john\desktop\arcproximator\mat4.h
+
+1467731757 c:\users\john\desktop\arcproximator\my_bezier3.h
+	"draw.h"
+
+1467731997 c:\users\john\desktop\arcproximator\color.h
+
+1467731942 c:\users\john\desktop\arcproximator\durand_kerner.h
+	"vec2.h"
+
+1468168250 source:c:\users\john\desktop\arcproximator\graphics\gl_stuff.c
+	"gl_stuff.h"
+	<stdio.h>
+
+1468168226 c:\users\john\desktop\arcproximator\graphics\gl_stuff.h
+	<GL/glew.h>
+	<GL/freeglut.h>
+
+1468256345 source:c:\users\john\desktop\arcproximator\graphics\my_draw.c
+	"my_draw.h"
+
+1468256327 c:\users\john\desktop\arcproximator\graphics\my_draw.h
+	"gl_stuff.h"
+	"my_vertex.h"
+
+1468168071 c:\users\john\desktop\arcproximator\graphics\vertex2d.h
+
+1468168879 source:c:\users\john\desktop\arcproximator\graphics\my_shader.c
+	"my_shader.h"
+	<stdio.h>
+	<string.h>
+	<stdlib.h>
+
+1468186436 c:\users\john\desktop\arcproximator\graphics\my_shader.h
+	"gl_stuff.h"
+
+1468251357 source:c:\users\john\desktop\arcproximator\graphics\my_texture.c
+	"my_texture.h"
+
+1468186454 c:\users\john\desktop\arcproximator\graphics\my_texture.h
+	"gl_stuff.h"
+
+1468186576 source:c:\users\john\desktop\arcproximator\gl\glew.c
+	<GL/glew.h>
+	<GL/wglew.h>
+	<GL/glxew.h>
+	<stddef.h>
+	<dlfcn.h>
+	<stdio.h>
+	<stdlib.h>
+	<stdlib.h>
+	<string.h>
+	<AvailabilityMacros.h>
+	<dlfcn.h>
+	<mach-o/dyld.h>
+
+1468256235 c:\users\john\desktop\arcproximator\graphics\my_vertex.h
+	<stdint.h>
+
+1468261225 source:c:\users\john\desktop\arcproximator\src\graphics\ar_draw.c
+	"ar_draw.h"
+
+1468261225 c:\users\john\desktop\arcproximator\src\graphics\ar_draw.h
+	"ar_gl.h"
+	"ar_vertex.h"
+
+1468360086 c:\users\john\desktop\arcproximator\src\graphics\ar_gl.h
+	<GL/glew.h>
+	<GL/freeglut.h>
+
+1468261158 c:\users\john\desktop\arcproximator\src\graphics\ar_vertex.h
+	<stdint.h>
+
+1468261224 source:c:\users\john\desktop\arcproximator\src\graphics\ar_gl.c
+	"ar_gl.h"
+	<stdio.h>
+
+1468261223 source:c:\users\john\desktop\arcproximator\src\graphics\ar_shader.c
+	"ar_shader.h"
+	<stdio.h>
+	<string.h>
+	<stdlib.h>
+
+1468261221 c:\users\john\desktop\arcproximator\src\graphics\ar_shader.h
+	"ar_gl.h"
+
+1468261186 source:c:\users\john\desktop\arcproximator\src\graphics\ar_texture.c
+	"ar_texture.h"
+
+1468261222 c:\users\john\desktop\arcproximator\src\graphics\ar_texture.h
+	"ar_gl.h"
+
+1468186576 source:c:\users\john\desktop\arcproximator\src\gl\glew.c
+	<GL/glew.h>
+	<GL/wglew.h>
+	<GL/glxew.h>
+	<stddef.h>
+	<dlfcn.h>
+	<stdio.h>
+	<stdlib.h>
+	<stdlib.h>
+	<string.h>
+	<AvailabilityMacros.h>
+	<dlfcn.h>
+	<mach-o/dyld.h>
+
+1468167757 c:\users\john\desktop\arcproximator\src\gl\glew.h
+	<stddef.h>
+	<inttypes.h>
+	<stdint.h>
+	<inttypes.h>
+	<Availability.h>
+	<OpenGL/glu.h>
+	<GL/glu.h>
+
+1468167757 c:\users\john\desktop\arcproximator\src\gl\wglew.h
+	<windows.h>
+
+1468167757 c:\users\john\desktop\arcproximator\src\gl\glxew.h
+	<X11/Xlib.h>
+	<X11/Xutil.h>
+	<X11/Xmd.h>
+	<GL/glew.h>
+
+1468333818 source:c:\users\john\desktop\arcproximator\src\main.c
+	"math/ar_bezier3.h"
+	"math/ar_arc.h"
+	"graphics/ar_shader.h"
+	"graphics/ar_draw.h"
+	"graphics/ar_texture.h"
+	"graphics/ar_color.h"
+	"math/vec2.h"
+	"math/mat23.h"
+	"math/mat4.h"
+	<assert.h>
+	<stdio.h>
+	"math/ar_durand_kerner_roots.h"
+
+1468264102 c:\users\john\desktop\arcproximator\src\graphics\ar_color.h
+	<stdint.h>
+
+1468329279 c:\users\john\desktop\arcproximator\src\math\vec2.h
+	"../util/ar_util.h"
+
+1468263233 c:\users\john\desktop\arcproximator\src\util\util.h
+	<math.h>
+	<stdlib.h>
+	<string.h>
+
+1468261742 c:\users\john\desktop\arcproximator\src\math\mat23.h
+	"vec2.h"
+
+1468261943 c:\users\john\desktop\arcproximator\src\math\mat4.h
+	"mat23.h"
+
+1468330749 c:\users\john\desktop\arcproximator\src\math\ar_bezier3.h
+	"vec2.h"
+
+1468330743 source:c:\users\john\desktop\arcproximator\src\math\ar_bezier3.c
+	"ar_bezier3.h"
+
+1468330669 source:c:\users\john\desktop\arcproximator\src\math\ar_arc.c
+	"ar_arc.h"
+
+1468330625 c:\users\john\desktop\arcproximator\src\math\ar_arc.h
+	"vec2.h"
+
+1468360285 c:\users\john\desktop\arcproximator\src\util\ar_util.h
+	<math.h>
+	<stdlib.h>
+	<string.h>
+
+1468333824 c:\users\john\desktop\arcproximator\src\math\ar_durand_kerner_roots.h
+	"vec2.h"
+
+1468350096 source:c:\users\john\desktop\arcproximator\src\math\ar_durand_kerner_roots.c
+	"ar_durand_kerner_roots.h"
+

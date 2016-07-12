@@ -1,32 +1,8 @@
-#include "my_arc.h"
-#include "my_bezier3.h"
+
+#include "ar_arc.h"
+#include "ar_bezier3.h"
 #include "color.h"
 #include "durand_kerner.h"
-
-#include <assert.h>
-#include <stdio.h>
-
-struct my_window {
-    int width;
-    int height;
-    int is_mouse_button_down[256];
-    int is_key_down[256];
-    vec2 mouse_pos;
-    vec2 mouse_pos_old;
-    mat23 world_to_screen;
-};
-
-struct my_window window;
-
-vec2 screen_to_world(vec2 screen_pos){
-
-    mat23 world_to_screen_transform = window.world_to_screen;
-    mat23 screen_to_world_transform = m23inv(world_to_screen_transform);
-
-    vec2 world_pos = m23mulv2(screen_to_world_transform, screen_pos);
-
-    return world_pos;
-}
 
 struct bezier_dist {
     vec2 p;
@@ -43,8 +19,8 @@ struct bezier_dist get_furthest(struct bezier_dist a, struct bezier_dist b){
     return a.dist2 > b.dist2 ? a : b;
 }
 
-int my_bezier3_dist_roots(
-    const struct my_bezier3 *curve,
+int ar_bezier3_dist_roots(
+    const struct ar_bezier3 *curve,
     vec2 point,
     vec2 *roots
 ){
@@ -105,18 +81,18 @@ int my_bezier3_dist_roots(
 
 vec2 p[4];
 
-void arc_from_points_and_normal(struct my_arc *arc, vec2 start, vec2 end, vec2 start_normal, int clockwise){
+void arc_from_points_and_normal(struct ar_arc *arc, vec2 start, vec2 end, vec2 start_normal, int clockwise){
     vec2 v = v2sub(end, start);
     double radius = v2dot(v, v)*0.5/v2dot(v, start_normal);
     ASSERT_NOT_NAN(radius);
     vec2 center = v2add(start, v2smul(radius, start_normal));
 
-    my_arc_init(arc, center, radius, start, end, clockwise);
+    ar_arc_init(arc, center, radius, start, end, clockwise);
 }
 
-struct bezier_dist my_bezier3_arcs_max_dist_approx(
-    const struct my_bezier3 *curve,
-    const struct my_arc *arcs
+struct bezier_dist ar_bezier3_arcs_max_dist_approx(
+    const struct ar_bezier3 *curve,
+    const struct ar_arc *arcs
 ){
     struct bezier_dist max_dist;
     max_dist.p = curve->control_points[0];
@@ -128,13 +104,13 @@ struct bezier_dist my_bezier3_arcs_max_dist_approx(
     int i;
     for (i = 0; i <= n; i++){
         double t = i*(1.0/n);
-        vec2 p = my_bezier3_at(curve, t);
+        vec2 p = ar_bezier3_at(curve, t);
 
         struct bezier_dist a, b;
         a.p = p;
         b.p = p;
-        a.q = my_arc_clamp(arcs + 0, p);
-        b.q = my_arc_clamp(arcs + 1, p);
+        a.q = ar_arc_clamp(arcs + 0, p);
+        b.q = ar_arc_clamp(arcs + 1, p);
         a.t = t;
         b.t = t;
         a.dist2 = v2dist2(a.p, a.q);
@@ -146,7 +122,7 @@ struct bezier_dist my_bezier3_arcs_max_dist_approx(
     return max_dist;
 }
 
-struct bezier_dist my_bezier3_arcs_max_dist(struct my_bezier3 *curve, struct my_arc *arcs){
+struct bezier_dist ar_bezier3_arcs_max_dist(struct ar_bezier3 *curve, struct ar_arc *arcs){
     struct bezier_dist max_dist;
     max_dist.p = curve->control_points[0];
     max_dist.t = 0.0;
@@ -154,12 +130,12 @@ struct bezier_dist my_bezier3_arcs_max_dist(struct my_bezier3 *curve, struct my_
 
     /* TODO check iterations */
     vec2 roots[30];
-    my_bezier3_dist_roots(curve, arcs[0].center, roots + 0*5);
-    my_bezier3_dist_roots(curve, arcs[1].center, roots + 1*5);
-    my_bezier3_dist_roots(curve, arcs[0].start , roots + 2*5);
-    my_bezier3_dist_roots(curve, arcs[0].end   , roots + 3*5);
-    my_bezier3_dist_roots(curve, arcs[1].start , roots + 4*5);
-    my_bezier3_dist_roots(curve, arcs[1].end   , roots + 5*5);
+    ar_bezier3_dist_roots(curve, arcs[0].center, roots + 0*5);
+    ar_bezier3_dist_roots(curve, arcs[1].center, roots + 1*5);
+    ar_bezier3_dist_roots(curve, arcs[0].start , roots + 2*5);
+    ar_bezier3_dist_roots(curve, arcs[0].end   , roots + 3*5);
+    ar_bezier3_dist_roots(curve, arcs[1].start , roots + 4*5);
+    ar_bezier3_dist_roots(curve, arcs[1].end   , roots + 5*5);
 
     int i;
     for (i = 0; i < 30; i++){
@@ -170,13 +146,13 @@ struct bezier_dist my_bezier3_arcs_max_dist(struct my_bezier3 *curve, struct my_
         /* TODO check how real this is */
         if (fabs(root.y) > 0.01) continue;
 
-        vec2 p = my_bezier3_at(curve, t);
+        vec2 p = ar_bezier3_at(curve, t);
 
         struct bezier_dist a, b;
         a.p = p;
         b.p = p;
-        a.q = my_arc_clamp(arcs + 0, p);
-        b.q = my_arc_clamp(arcs + 1, p);
+        a.q = ar_arc_clamp(arcs + 0, p);
+        b.q = ar_arc_clamp(arcs + 1, p);
         a.t = t;
         b.t = t;
         a.dist2 = v2dist2(a.p, a.q);
@@ -237,8 +213,8 @@ int convex_hull4(const vec2 *p, vec2 *q){
 }
 
 void approximate_curve_with_arcs(){
-    struct my_bezier3 curve[1];
-    my_bezier3_init(curve, p[0], p[1], p[2], p[3]);
+    struct ar_bezier3 curve[1];
+    ar_bezier3_init(curve, p[0], p[1], p[2], p[3]);
 
     vec2 a = p[0];
     vec2 b = p[3];
@@ -287,12 +263,12 @@ void approximate_curve_with_arcs(){
     ASSERT_NOT_NAN(normal_b.x);
     ASSERT_NOT_NAN(normal_b.y);
 
-    struct my_arc arcs[2];
+    struct ar_arc arcs[2];
     arc_from_points_and_normal(arcs + 0, a, join, normal_a, a_clockwise);
     arc_from_points_and_normal(arcs + 1, b, join, normal_b, b_clockwise);
 
-    struct bezier_dist dist0 = my_bezier3_arcs_max_dist(curve, arcs);
-    struct bezier_dist dist1 = my_bezier3_arcs_max_dist_approx(curve, arcs);
+    struct bezier_dist dist0 = ar_bezier3_arcs_max_dist(curve, arcs);
+    struct bezier_dist dist1 = ar_bezier3_arcs_max_dist_approx(curve, arcs);
 
     if (show_max_dist){
         printf("dist: %f %f %f, %f %f\n\n", sqrt(dist0.dist2) - sqrt(dist1.dist2), sqrt(dist0.dist2), sqrt(dist1.dist2), dist0.t, dist1.t);
@@ -332,17 +308,17 @@ void approximate_curve_with_arcs(){
     }
 
     SET_COLOR(WHITE);
-    my_bezier3_draw(curve);
+    ar_bezier3_draw(curve);
 
     if (show_biarc){
         SET_COLOR(YELLOW);
         draw_circle(join, 5.0);
 
         SET_COLOR(GREEN);
-        my_arc_draw(arcs + 0);
+        ar_arc_draw(arcs + 0);
 
         SET_COLOR(RED);
-        my_arc_draw(arcs + 1);
+        ar_arc_draw(arcs + 1);
     }
 
     if (show_useful_solutions){
@@ -351,151 +327,9 @@ void approximate_curve_with_arcs(){
         int positive = s > 0.0;
         int clockwise = aright != bright ? /* S */ positive : /* U */ aright;
 
-        struct my_arc arc[1];
-        my_arc_init(arc, center, radius, a, b, clockwise);
+        struct ar_arc arc[1];
+        ar_arc_init(arc, center, radius, a, b, clockwise);
         SET_COLOR(LIGHT_BLUE);
-        my_arc_draw(arc);
+        ar_arc_draw(arc);
     }
-}
-
-void on_frame(){
-    glClearColor(0.1f, 0.2f, 0.3f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-    window.width = glutGet(GLUT_WINDOW_WIDTH);
-    window.height = glutGet(GLUT_WINDOW_HEIGHT);
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(0, window.width, 0, window.height, -1, +1);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-
-    mat23 world_to_screen = window.world_to_screen;
-
-    mat4 modelview = m4m23(world_to_screen);
-    glMultMatrixd(modelview.data);
-
-    approximate_curve_with_arcs();
-
-    glutSwapBuffers();
-}
-
-void work(int frame){
-    glutPostRedisplay();
-    glutTimerFunc(20, work, frame + 1);
-}
-
-void on_move(int x, int y){
-    window.mouse_pos_old = window.mouse_pos;
-
-    vec2 old_world_mouse_pos = screen_to_world(window.mouse_pos);
-    window.mouse_pos = v2(x, window.height - 1 - y);
-    vec2 new_world_mouse_pos = screen_to_world(window.mouse_pos);
-
-    if (window.is_mouse_button_down[GLUT_RIGHT_BUTTON]){
-        vec2 world_delta = v2sub(new_world_mouse_pos, old_world_mouse_pos);
-
-        mat23 t = window.world_to_screen;
-
-        t = m23mul(t, m23(1.0, 0.0, world_delta.x, 0.0, 1.0, world_delta.y));
-
-        window.world_to_screen = t;
-    }
-
-    if (window.is_mouse_button_down[GLUT_LEFT_BUTTON]){
-        vec2 world_mouse_pos = screen_to_world(window.mouse_pos);
-
-        vec2 *closest = NULL;
-        int i;
-        for (i = 0; i < 4; i++){
-            if (!closest || v2dist2(p[i], world_mouse_pos) < v2dist2(*closest, world_mouse_pos)){
-                closest = &p[i];
-            }
-        }
-
-        *closest = world_mouse_pos;
-    }
-}
-
-void on_scroll(double forward){
-
-    double magnification = 8.0/7.0;
-    double scale = pow(magnification, forward);
-
-    vec2 pivot = screen_to_world(window.mouse_pos);
-
-    mat23 t = window.world_to_screen;
-
-    t = m23mul(t, m23(1.0, 0.0, +pivot.x, 0.0, 1.0, +pivot.y));
-    t = m23mul(t, m23(scale, 0.0, 0.0, 0.0, scale, 0.0));
-    t = m23mul(t, m23(1.0, 0.0, -pivot.x, 0.0, 1.0, -pivot.y));
-
-    window.world_to_screen = t;
-}
-
-void on_button(int button, int action, int x, int y){
-    on_move(x, y);
-
-    int down = action == GLUT_DOWN;
-
-    if (button == 3 && down) on_scroll(+1.0);
-    if (button == 4 && down) on_scroll(-1.0);
-
-    window.is_mouse_button_down[button] = down;
-}
-
-void on_key_down(unsigned char key, int x, int y){
-    UNUSED(x);
-    UNUSED(y);
-
-    window.is_key_down[key] = 1;
-
-    if (key == 'q') exit(0);
-}
-
-void on_key_up(unsigned char key, int x, int y){
-    UNUSED(x);
-    UNUSED(y);
-
-    window.is_key_down[key] = 0;
-}
-
-int main(int argc, char **argv){
-    window.width = 512;
-    window.height = 512;
-    window.world_to_screen = m23id();
-
-    p[0] = v2(100, 100);
-    p[1] = v2(500, 150);
-    p[2] = v2(50, 300);
-    p[3] = v2(400, 500);
-
-    glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_STENCIL);
-    glutInitWindowSize(window.width, window.height);
-    glutCreateWindow("");
-
-    glutCreateMenu(menu_callback);
-    glutAddMenuEntry("Control points", 4);
-    glutAddMenuEntry("Biarc", 5);
-    glutAddMenuEntry("Solution circle", 1);
-    glutAddMenuEntry("\"Useful solutions\"", 2);
-    glutAddMenuEntry("Max distance", 3);
-    glutAddMenuEntry("Convex hull", 6);
-    glutAttachMenu(GLUT_MIDDLE_BUTTON);
-
-    glutMotionFunc(on_move);
-    glutPassiveMotionFunc(on_move);
-    glutMouseFunc(on_button);
-    glutKeyboardFunc(on_key_down);
-    glutKeyboardUpFunc(on_key_up);
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    glutDisplayFunc(on_frame);
-    work(0);
-    glutMainLoop();
-    return 0;
 }

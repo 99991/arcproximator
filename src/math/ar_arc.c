@@ -1,16 +1,7 @@
-#ifndef MY_ARC_INCLUDED
-#define MY_ARC_INCLUDED
+#include "ar_arc.h"
 
-#include "draw.h"
-
-struct my_arc {
-    vec2 center, start, end;
-    double radius;
-    int clockwise;
-};
-
-void my_arc_init(
-    struct my_arc *arc,
+void ar_arc_init(
+    struct ar_arc *arc,
     vec2 center,
     double radius,
     vec2 start,
@@ -24,7 +15,7 @@ void my_arc_init(
     arc->clockwise = clockwise;
 }
 
-void my_arc_points(const struct my_arc *arc, vec2 *points, int n){
+void ar_arc_points(const struct ar_arc *arc, vec2 *points, int n, double t0, double t1){
     vec2 center = arc->center;
     vec2 start = arc->start;
     vec2 end = arc->end;
@@ -34,30 +25,21 @@ void my_arc_points(const struct my_arc *arc, vec2 *points, int n){
     double end_angle = v2angle(v2sub(end, center));
 
     if (arc->clockwise){
-        MY_SWAP(double, start_angle, end_angle);
+        AR_SWAP(double, start_angle, end_angle);
     }
 
-    if (end_angle < start_angle) end_angle += 2.0*PI;
+    if (end_angle < start_angle) end_angle += 2.0*AR_PI;
 
     int i;
     for (i = 0; i < n; i++){
-        double angle = start_angle + (end_angle - start_angle)/(n - 1) * i;
+        double u = 1.0/(n - 1) * i;
+        double t = t0 + (t1 - t0)*u;
+        double angle = start_angle + (end_angle - start_angle)*t;
         points[i] = v2add(center, v2polar(angle, radius));
     }
 }
 
-void my_arc_draw(const struct my_arc *arc){
-    int n = 100;
-    vec2 points[n];
-    my_arc_points(arc, points, n);
-    draw(points, n, GL_LINE_STRIP);
-    /*
-    draw_line(arc->center, arc->start);
-    draw_line(arc->center, arc->end);
-    */
-}
-
-int my_ccw_arc_encloses(const struct my_arc *arc, vec2 p){
+int ar_ccw_arc_encloses(const struct ar_arc *arc, vec2 p){
     int left_start = v2isleft(p, arc->center, arc->start);
     int right_end  = v2isright(p, arc->center, arc->end);
 
@@ -68,16 +50,14 @@ int my_ccw_arc_encloses(const struct my_arc *arc, vec2 p){
     }
 }
 
-int my_arc_encloses(const struct my_arc *arc, vec2 p){
-    return my_ccw_arc_encloses(arc, p) ^ arc->clockwise;
+int ar_arc_encloses(const struct ar_arc *arc, vec2 p){
+    return ar_ccw_arc_encloses(arc, p) ^ arc->clockwise;
 }
 
-vec2 my_arc_clamp(const struct my_arc *arc, vec2 p){
-    if (my_arc_encloses(arc, p)){
+vec2 ar_arc_clamp(const struct ar_arc *arc, vec2 p){
+    if (ar_arc_encloses(arc, p)){
         return v2add(arc->center, v2scale(v2sub(p, arc->center), arc->radius));
     }
 
     return v2dist2(p, arc->start) < v2dist2(p, arc->end) ? arc->start : arc->end;
 }
-
-#endif

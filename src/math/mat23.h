@@ -9,7 +9,7 @@ typedef struct {
 
 #define m23at(a, i, j) a.data[i + j*2]
 
-INLINE mat23 m23(
+AR_INLINE mat23 m23(
     double m00, double m01, double m02,
     double m10, double m11, double m12
 ){
@@ -28,20 +28,20 @@ INLINE mat23 m23(
     return c;
 }
 
-INLINE mat23 m23id(){
+AR_INLINE mat23 m23id(){
     return m23(
         1.0, 0.0, 0.0,
         0.0, 1.0, 0.0
     );
 }
 
-INLINE vec2 m23mulv2(mat23 a, vec2 b){
+AR_INLINE vec2 m23mulv2(mat23 a, vec2 b){
     double x = m23at(a, 0, 0)*b.x + m23at(a, 0, 1)*b.y + m23at(a, 0, 2);
     double y = m23at(a, 1, 0)*b.x + m23at(a, 1, 1)*b.y + m23at(a, 1, 2);
     return v2(x, y);
 }
 
-INLINE mat23 m23mul(mat23 lhs, mat23 rhs){
+AR_INLINE mat23 m23mul(mat23 lhs, mat23 rhs){
     /* matrices have the form:  */
     /*                          */
     /*   [a b c]   [q r s]      */
@@ -68,7 +68,7 @@ INLINE mat23 m23mul(mat23 lhs, mat23 rhs){
     );
 }
 
-INLINE mat23 m23inv(mat23 u){
+AR_INLINE mat23 m23inv(mat23 u){
     double a = m23at(u, 0, 0);
     double b = m23at(u, 0, 1);
     double x = m23at(u, 0, 2);

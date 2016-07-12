@@ -30,21 +30,51 @@
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
+			<Add option="-DGLEW_STATIC" />
 		</Compiler>
-		<Unit filename="color.h" />
-		<Unit filename="draw.h" />
-		<Unit filename="durand_kerner.h" />
-		<Unit filename="integrate.h" />
-		<Unit filename="main.c">
+		<Unit filename="src/GL/glew.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="mat23.h" />
-		<Unit filename="mat4.h" />
-		<Unit filename="my_arc.h" />
-		<Unit filename="my_bezier3.h" />
-		<Unit filename="unused_mat2.h" />
-		<Unit filename="util.h" />
-		<Unit filename="vec2.h" />
+		<Unit filename="src/GL/glew.h" />
+		<Unit filename="src/GL/glxew.h" />
+		<Unit filename="src/GL/wglew.h" />
+		<Unit filename="src/graphics/ar_color.h" />
+		<Unit filename="src/graphics/ar_draw.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/graphics/ar_draw.h" />
+		<Unit filename="src/graphics/ar_gl.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/graphics/ar_gl.h" />
+		<Unit filename="src/graphics/ar_shader.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/graphics/ar_shader.h" />
+		<Unit filename="src/graphics/ar_texture.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/graphics/ar_texture.h" />
+		<Unit filename="src/graphics/ar_vertex.h" />
+		<Unit filename="src/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/math/ar_arc.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/math/ar_arc.h" />
+		<Unit filename="src/math/ar_bezier3.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/math/ar_bezier3.h" />
+		<Unit filename="src/math/ar_durand_kerner_roots.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/math/ar_durand_kerner_roots.h" />
+		<Unit filename="src/math/mat23.h" />
+		<Unit filename="src/math/mat4.h" />
+		<Unit filename="src/math/vec2.h" />
+		<Unit filename="src/util/ar_util.h" />
 		<Extensions>
 			<code_completion />
 			<debugger />
