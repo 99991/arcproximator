@@ -13,8 +13,12 @@
 	"color.h"
 	"durand_kerner.h"
 
+1468251336 rner.h"
+
 1467731762 c:\users\john\desktop\arcproximator\my_arc.h
 	"draw.h"
+
+1468333824 
 
 1468167778 c:\users\john\desktop\arcproximator\draw.h
 	<GL/glew.h>
@@ -34,6 +38,8 @@
 	<stdlib.h>
 	<string.h>
 
+1468360285 
+
 1468245905 c:\users\john\desktop\arcproximator\mat4.h
 
 1467731757 c:\users\john\desktop\arcproximator\my_bezier3.h
@@ -52,12 +58,18 @@
 	<GL/glew.h>
 	<GL/freeglut.h>
 
+1468360086 ut.h>
+
 1468256345 source:c:\users\john\desktop\arcproximator\graphics\my_draw.c
 	"my_draw.h"
+
+1468261225 "
 
 1468256327 c:\users\john\desktop\arcproximator\graphics\my_draw.h
 	"gl_stuff.h"
 	"my_vertex.h"
+
+1468261225 .h"
 
 1468168071 c:\users\john\desktop\arcproximator\graphics\vertex2d.h
 
@@ -70,8 +82,12 @@
 1468186436 c:\users\john\desktop\arcproximator\graphics\my_shader.h
 	"gl_stuff.h"
 
+1468186454 h"
+
 1468251357 source:c:\users\john\desktop\arcproximator\graphics\my_texture.c
 	"my_texture.h"
+
+1468261186 e.h"
 
 1468186454 c:\users\john\desktop\arcproximator\graphics\my_texture.h
 	"gl_stuff.h"
@@ -89,6 +105,8 @@
 	<AvailabilityMacros.h>
 	<dlfcn.h>
 	<mach-o/dyld.h>
+
+1468186576 ld.h>
 
 1468256235 c:\users\john\desktop\arcproximator\graphics\my_vertex.h
 	<stdint.h>
@@ -152,6 +170,8 @@
 1468167757 c:\users\john\desktop\arcproximator\src\gl\wglew.h
 	<windows.h>
 
+1468167757 >
+
 1468167757 c:\users\john\desktop\arcproximator\src\gl\glxew.h
 	<X11/Xlib.h>
 	<X11/Xutil.h>
@@ -172,11 +192,15 @@
 	<stdio.h>
 	"math/ar_durand_kerner_roots.h"
 
+1468333818 urand_kerner_roots.h"
+
 1468264102 c:\users\john\desktop\arcproximator\src\graphics\ar_color.h
 	<stdint.h>
 
 1468329279 c:\users\john\desktop\arcproximator\src\math\vec2.h
 	"../util/ar_util.h"
+
+1468329279 r_util.h"
 
 1468263233 c:\users\john\desktop\arcproximator\src\util\util.h
 	<math.h>
@@ -195,6 +219,8 @@
 1468330743 source:c:\users\john\desktop\arcproximator\src\math\ar_bezier3.c
 	"ar_bezier3.h"
 
+1468330743 3.h"
+
 1468330669 source:c:\users\john\desktop\arcproximator\src\math\ar_arc.c
 	"ar_arc.h"
 
@@ -211,4 +237,38 @@
 
 1468350096 source:c:\users\john\desktop\arcproximator\src\math\ar_durand_kerner_roots.c
 	"ar_durand_kerner_roots.h"
+
+1468350096 _kerner_roots.h"
+
+1468404062 source:/home/karl/Desktop/arcproximator/src/GL/glew.c
+	"glew.h"
+	"wglew.h"
+	"glxew.h"
+	<stddef.h>
+	<dlfcn.h>
+	<stdio.h>
+	<stdlib.h>
+	<stdlib.h>
+	<string.h>
+	<AvailabilityMacros.h>
+	<dlfcn.h>
+	<mach-o/dyld.h>
+
+1468403974 /home/karl/Desktop/arcproximator/src/GL/glew.h
+	<stddef.h>
+	<inttypes.h>
+	<stdint.h>
+	<inttypes.h>
+	<Availability.h>
+	<OpenGL/glu.h>
+	<GL/glu.h>
+
+1468403974 /home/karl/Desktop/arcproximator/src/GL/wglew.h
+	<windows.h>
+
+1468404070 /home/karl/Desktop/arcproximator/src/GL/glxew.h
+	<X11/Xlib.h>
+	<X11/Xutil.h>
+	<X11/Xmd.h>
+	"glew.h"
 

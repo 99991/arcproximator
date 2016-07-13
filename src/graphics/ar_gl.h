@@ -12,6 +12,12 @@
 
 #import <OpenGLES/ES2/glext.h>
 
+#else
+/* probably linux */
+
+#include "../GL/glew.h"
+#include <GL/freeglut.h>
+
 #endif
 
 void ar_gl_check(int line);
