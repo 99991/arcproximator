@@ -1,12 +1,10 @@
 #ifndef AR_GL_INCLUDED
 #define AR_GL_INCLUDED
 
-/* TODO replace glew */
-
 #ifdef _WIN32
 
-#include <GL/glew.h>
 #include <GL/freeglut.h>
+#include "../glad/glad.h"
 
 #elif __APPLE__
 
@@ -15,8 +13,8 @@
 #else
 /* probably linux */
 
-#include "../GL/glew.h"
 #include <GL/freeglut.h>
+#include <glad/glad.h>
 
 #endif
 

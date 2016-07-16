@@ -16,13 +16,14 @@ void ar_arc_init(
 }
 
 void ar_arc_points(const struct ar_arc *arc, vec2 *points, int n, double t0, double t1){
+    int i;
     vec2 center = arc->center;
     vec2 start = arc->start;
     vec2 end = arc->end;
     double radius = arc->radius;
 
     double start_angle = v2angle(v2sub(start, center));
-    double end_angle = v2angle(v2sub(end, center));
+    double end_angle   = v2angle(v2sub(end, center));
 
     if (arc->clockwise){
         AR_SWAP(double, start_angle, end_angle);
@@ -30,11 +31,11 @@ void ar_arc_points(const struct ar_arc *arc, vec2 *points, int n, double t0, dou
 
     if (end_angle < start_angle) end_angle += 2.0*AR_PI;
 
-    int i;
     for (i = 0; i < n; i++){
         double u = 1.0/(n - 1) * i;
         double t = t0 + (t1 - t0)*u;
         double angle = start_angle + (end_angle - start_angle)*t;
+
         points[i] = v2add(center, v2polar(angle, radius));
     }
 }

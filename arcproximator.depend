@@ -18,7 +18,7 @@
 1467731762 c:\users\john\desktop\arcproximator\my_arc.h
 	"draw.h"
 
-1468333824 
+1468360285 
 
 1468167778 c:\users\john\desktop\arcproximator\draw.h
 	<GL/glew.h>
@@ -37,8 +37,6 @@
 	<math.h>
 	<stdlib.h>
 	<string.h>
-
-1468360285 
 
 1468245905 c:\users\john\desktop\arcproximator\mat4.h
 
@@ -111,16 +109,18 @@
 1468256235 c:\users\john\desktop\arcproximator\graphics\my_vertex.h
 	<stdint.h>
 
-1468261225 source:c:\users\john\desktop\arcproximator\src\graphics\ar_draw.c
+1468588388 source:c:\users\john\desktop\arcproximator\src\graphics\ar_draw.c
 	"ar_draw.h"
 
 1468261225 c:\users\john\desktop\arcproximator\src\graphics\ar_draw.h
 	"ar_gl.h"
 	"ar_vertex.h"
 
-1468360086 c:\users\john\desktop\arcproximator\src\graphics\ar_gl.h
-	<GL/glew.h>
+1468597647 c:\users\john\desktop\arcproximator\src\graphics\ar_gl.h
 	<GL/freeglut.h>
+	"../glad/glad.h"
+	<GL/freeglut.h>
+	<glad/glad.h>
 
 1468261158 c:\users\john\desktop\arcproximator\src\graphics\ar_vertex.h
 	<stdint.h>
@@ -129,7 +129,7 @@
 	"ar_gl.h"
 	<stdio.h>
 
-1468261223 source:c:\users\john\desktop\arcproximator\src\graphics\ar_shader.c
+1468588388 source:c:\users\john\desktop\arcproximator\src\graphics\ar_shader.c
 	"ar_shader.h"
 	<stdio.h>
 	<string.h>
@@ -178,7 +178,7 @@
 	<X11/Xmd.h>
 	<GL/glew.h>
 
-1468333818 source:c:\users\john\desktop\arcproximator\src\main.c
+1468600534 source:c:\users\john\desktop\arcproximator\src\main.c
 	"math/ar_bezier3.h"
 	"math/ar_arc.h"
 	"graphics/ar_shader.h"
@@ -191,13 +191,14 @@
 	<assert.h>
 	<stdio.h>
 	"math/ar_durand_kerner_roots.h"
+	<math.h>
 
 1468333818 urand_kerner_roots.h"
 
 1468264102 c:\users\john\desktop\arcproximator\src\graphics\ar_color.h
 	<stdint.h>
 
-1468329279 c:\users\john\desktop\arcproximator\src\math\vec2.h
+1468587849 c:\users\john\desktop\arcproximator\src\math\vec2.h
 	"../util/ar_util.h"
 
 1468329279 r_util.h"
@@ -207,10 +208,10 @@
 	<stdlib.h>
 	<string.h>
 
-1468261742 c:\users\john\desktop\arcproximator\src\math\mat23.h
+1468588002 c:\users\john\desktop\arcproximator\src\math\mat23.h
 	"vec2.h"
 
-1468261943 c:\users\john\desktop\arcproximator\src\math\mat4.h
+1468587949 c:\users\john\desktop\arcproximator\src\math\mat4.h
 	"mat23.h"
 
 1468330749 c:\users\john\desktop\arcproximator\src\math\ar_bezier3.h
@@ -221,22 +222,20 @@
 
 1468330743 3.h"
 
-1468330669 source:c:\users\john\desktop\arcproximator\src\math\ar_arc.c
+1468595581 source:c:\users\john\desktop\arcproximator\src\math\ar_arc.c
 	"ar_arc.h"
 
 1468330625 c:\users\john\desktop\arcproximator\src\math\ar_arc.h
 	"vec2.h"
 
-1468360285 c:\users\john\desktop\arcproximator\src\util\ar_util.h
-	<math.h>
-	<stdlib.h>
-	<string.h>
+1468597439 c:\users\john\desktop\arcproximator\src\util\ar_util.h
 
 1468333824 c:\users\john\desktop\arcproximator\src\math\ar_durand_kerner_roots.h
 	"vec2.h"
 
-1468350096 source:c:\users\john\desktop\arcproximator\src\math\ar_durand_kerner_roots.c
+1468588177 source:c:\users\john\desktop\arcproximator\src\math\ar_durand_kerner_roots.c
 	"ar_durand_kerner_roots.h"
+	<stdlib.h>
 
 1468350096 _kerner_roots.h"
 
@@ -271,4 +270,35 @@
 	<X11/Xutil.h>
 	<X11/Xmd.h>
 	"glew.h"
+
+1468588344 c:\users\john\desktop\arcproximator\src\glad\glad.h
+	<windows.h>
+	<stddef.h>
+	<KHR/khrplatform.h>
+	<inttypes.h>
+	<inttypes.h>
+	<inttypes.h>
+	<stdint.h>
+	<stdint.h>
+	<inttypes.h>
+
+1468597621 source:c:\users\john\desktop\arcproximator\src\glad\glad.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	"glad.h"
+
+1468589379 source:c:\users\john\desktop\arcproximator\src\math\mat23.c
+	"mat23.h"
+
+1468589379 source:c:\users\john\desktop\arcproximator\src\math\mat4.c
+	"mat4.h"
+
+1468597449 source:c:\users\john\desktop\arcproximator\src\math\vec2.c
+	"vec2.h"
+	<math.h>
+
+1468600544 source:c:\users\john\desktop\arcproximator\src\util\ar_util.c
+	"ar_util.h"
+	<stdio.h>
 

@@ -29,15 +29,31 @@
 			</Target>
 		</Build>
 		<Compiler>
+			<Add option="-Wshadow" />
+			<Add option="-Winit-self" />
+			<Add option="-Wredundant-decls" />
+			<Add option="-Wcast-align" />
+			<Add option="-Wfloat-equal" />
+			<Add option="-Winline" />
+			<Add option="-Wunreachable-code" />
+			<Add option="-Wmissing-include-dirs" />
+			<Add option="-Wswitch-default" />
+			<Add option="-pedantic" />
+			<Add option="-Wextra" />
 			<Add option="-Wall" />
-			<Add option="-DGLEW_STATIC" />
+			<Add option="-ansi" />
+			<Add option="-Wbad-function-cast" />
+			<Add option="-Wnested-externs" />
+			<Add option="-Wlogical-op" />
+			<Add option="-Wstrict-aliasing=2" />
+			<Add option="-Wold-style-definition" />
+			<Add option="-Wpointer-arith" />
+			<Add option="-Wcast-qual" />
 		</Compiler>
-		<Unit filename="src/GL/glew.c">
+		<Unit filename="src/glad/glad.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="src/GL/glew.h" />
-		<Unit filename="src/GL/glxew.h" />
-		<Unit filename="src/GL/wglew.h" />
+		<Unit filename="src/glad/glad.h" />
 		<Unit filename="src/graphics/ar_color.h" />
 		<Unit filename="src/graphics/ar_draw.c">
 			<Option compilerVar="CC" />
@@ -71,9 +87,21 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/math/ar_durand_kerner_roots.h" />
+		<Unit filename="src/math/mat23.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="src/math/mat23.h" />
+		<Unit filename="src/math/mat4.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="src/math/mat4.h" />
+		<Unit filename="src/math/vec2.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="src/math/vec2.h" />
+		<Unit filename="src/util/ar_util.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="src/util/ar_util.h" />
 		<Extensions>
 			<code_completion />

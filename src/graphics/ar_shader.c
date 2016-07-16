@@ -4,13 +4,14 @@
 #include <string.h>
 #include <stdlib.h>
 
-static int shader_compile_check(GLuint shader) {
+static int shader_compile_check(GLuint shader){
+    char *log;
     GLint status;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
     if (status == GL_FALSE) {
         GLint length = 0;
         glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
-        char *log = (char*)malloc(length);
+        log = (char*)malloc(length);
         glGetShaderInfoLog(shader, length, &length, log);
         puts(log);
         free(log);
@@ -19,13 +20,14 @@ static int shader_compile_check(GLuint shader) {
     return 1;
 }
 
-static int shader_link_check(GLuint program) {
+static int shader_link_check(GLuint program){
+    char *log;
     GLint status;
     glGetProgramiv(program, GL_LINK_STATUS, &status);
     if (status == GL_FALSE) {
         GLint length = 0;
         glGetProgramiv(program, GL_INFO_LOG_LENGTH, &length);
-        char *log = (char*)malloc(length);
+        log = (char*)malloc(length);
         glGetProgramInfoLog(program, length, &length, log);
         puts(log);
         free(log);

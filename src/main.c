@@ -58,7 +58,7 @@ void make_rect(
     vertices[5] = ar_vert(x0, y1, u0, v1, color);
 }
 
-void upload_model_view_projection(mat4 mvp, GLint umvp){
+void upload_model_view_projection(mat4 mvp){
     /* upload as double not available everywhere */
     float data[16];
     int i, j;
@@ -90,15 +90,6 @@ void ar_bezier3_draw(const struct ar_bezier3 *curve, uint32_t color){
     free(points);
 }
 
-void arc_from_points_and_normal(struct ar_arc *arc, vec2 start, vec2 end, vec2 start_normal, int clockwise){
-    vec2 v = v2sub(end, start);
-    double radius = v2dot(v, v)*0.5/v2dot(v, start_normal);
-    AR_ASSERT_GOOD_NUMBER(radius);
-    vec2 center = v2add(start, v2smul(radius, start_normal));
-
-    ar_arc_init(arc, center, radius, start, end, clockwise);
-}
-
 void ar_circle_points(vec2 *points, int n, vec2 center, double radius){
     double delta_angle = 2.0*AR_PI/n;
     int i;
@@ -116,16 +107,26 @@ void ar_draw_circle(vec2 center, double radius, uint32_t color){
 }
 
 void ar_draw_arrow(vec2 a, vec2 b, double r, uint32_t color){
+    vec2 d = v2scale(v2sub(b, a), r);
+
     points[0] = a;
     points[1] = b;
     ar_draw_points(points, 2, color, GL_LINES);
 
-    vec2 d = v2scale(v2sub(b, a), r);
     points[0] = b;
     points[1] = v2sub(b, v2add(v2smul(2.0, d), v2left(d)));
     points[2] = v2sub(b, v2sub(v2smul(2.0, d), v2left(d)));
 
     ar_draw_points(points, 3, color, GL_TRIANGLES);
+}
+
+void arc_from_points_and_normal(struct ar_arc *arc, vec2 start, vec2 end, vec2 start_normal, int clockwise){
+    vec2 v = v2sub(end, start);
+    double radius = v2dot(v, v)*0.5/v2dot(v, start_normal);
+    vec2 center = v2add(start, v2smul(radius, start_normal));
+    AR_ASSERT_GOOD_NUMBER(radius);
+
+    ar_arc_init(arc, center, radius, start, end, clockwise);
 }
 #if 0
 int line_intersect(vec2 a, vec2 b, vec2 c, vec2 d, double *u, double *v){
@@ -175,7 +176,8 @@ int line_segment_intersect(vec2 a, vec2 b, vec2 c, vec2 d, vec2 *intersection){
     return 0;
 }
 #endif
-int show_solution_circle  = 1;
+
+int show_solution_circle  = 0;
 int show_useful_solutions = 0;
 int show_max_dist         = 0;
 int show_control_points   = 1;
@@ -188,6 +190,7 @@ void menu_callback(int option){
         case 3: show_max_dist         = !show_max_dist;         break;
         case 4: show_control_points   = !show_control_points;   break;
         case 5: show_biarc            = !show_biarc;            break;
+        default: break;
     }
 }
 
@@ -201,6 +204,8 @@ int ar_bezier3_circle_roots(
     double radius,
     vec2 *roots
 ){
+    int i;
+    int iterations;
     const vec2 *p = curve->control_points;
     double ax = p[0].x;
     double ay = p[0].y;
@@ -213,6 +218,7 @@ int ar_bezier3_circle_roots(
     double x = center.x;
     double y = center.y;
     double r = radius;
+    double coeffs[7];
 
     AR_ASSERT_GOOD_NUMBER(ax);
     AR_ASSERT_GOOD_NUMBER(bx);
@@ -225,18 +231,16 @@ int ar_bezier3_circle_roots(
     AR_ASSERT_GOOD_NUMBER(dy);
     AR_ASSERT_GOOD_NUMBER(y);
 
-    double coeffs[7] = {
-        (ax*ax) - 6*ax*bx + 6*ax*cx - 2*ax*dx + (ay*ay) - 6*ay*by + 6*ay*cy - 2*ay*dy + 9*(bx*bx) - 18*bx*cx + 6*bx*dx + 9*(by*by) - 18*by*cy + 6*by*dy + 9*(cx*cx) - 6*cx*dx + 9*(cy*cy) - 6*cy*dy + (dx*dx) + (dy*dy),
-        -6*(ax*ax) + 30*ax*bx - 24*ax*cx + 6*ax*dx - 6*(ay*ay) + 30*ay*by - 24*ay*cy + 6*ay*dy - 36*(bx*bx) + 54*bx*cx - 12*bx*dx - 36*(by*by) + 54*by*cy - 12*by*dy - 18*(cx*cx) + 6*cx*dx - 18*(cy*cy) + 6*cy*dy,
-        15*(ax*ax) - 60*ax*bx + 36*ax*cx - 6*ax*dx + 15*(ay*ay) - 60*ay*by + 36*ay*cy - 6*ay*dy + 54*(bx*bx) - 54*bx*cx + 6*bx*dx + 54*(by*by) - 54*by*cy + 6*by*dy + 9*(cx*cx) + 9*(cy*cy),
-        -20*(ax*ax) + 60*ax*bx - 24*ax*cx + 2*ax*dx + 2*ax*x - 20*(ay*ay) + 60*ay*by - 24*ay*cy + 2*ay*dy + 2*ay*y - 36*(bx*bx) + 18*bx*cx - 6*bx*x - 36*(by*by) + 18*by*cy - 6*by*y + 6*cx*x + 6*cy*y - 2*dx*x - 2*dy*y,
-        15*(ax*ax) - 30*ax*bx + 6*ax*cx - 6*ax*x + 15*(ay*ay) - 30*ay*by + 6*ay*cy - 6*ay*y + 9*(bx*bx) + 12*bx*x + 9*(by*by) + 12*by*y - 6*cx*x - 6*cy*y,
-        -6*(ax*ax) + 6*ax*bx + 6*ax*x - 6*(ay*ay) + 6*ay*by + 6*ay*y - 6*bx*x - 6*by*y,
-        (ax*ax) - 2*ax*x + (ay*ay) - 2*ay*y - (r*r) + (x*x) + (y*y),
-    };
+    coeffs[0] = (ax*ax) - 6*ax*bx + 6*ax*cx - 2*ax*dx + (ay*ay) - 6*ay*by + 6*ay*cy - 2*ay*dy + 9*(bx*bx) - 18*bx*cx + 6*bx*dx + 9*(by*by) - 18*by*cy + 6*by*dy + 9*(cx*cx) - 6*cx*dx + 9*(cy*cy) - 6*cy*dy + (dx*dx) + (dy*dy);
+    coeffs[1] = -6*(ax*ax) + 30*ax*bx - 24*ax*cx + 6*ax*dx - 6*(ay*ay) + 30*ay*by - 24*ay*cy + 6*ay*dy - 36*(bx*bx) + 54*bx*cx - 12*bx*dx - 36*(by*by) + 54*by*cy - 12*by*dy - 18*(cx*cx) + 6*cx*dx - 18*(cy*cy) + 6*cy*dy;
+    coeffs[2] = 15*(ax*ax) - 60*ax*bx + 36*ax*cx - 6*ax*dx + 15*(ay*ay) - 60*ay*by + 36*ay*cy - 6*ay*dy + 54*(bx*bx) - 54*bx*cx + 6*bx*dx + 54*(by*by) - 54*by*cy + 6*by*dy + 9*(cx*cx) + 9*(cy*cy);
+    coeffs[3] = -20*(ax*ax) + 60*ax*bx - 24*ax*cx + 2*ax*dx + 2*ax*x - 20*(ay*ay) + 60*ay*by - 24*ay*cy + 2*ay*dy + 2*ay*y - 36*(bx*bx) + 18*bx*cx - 6*bx*x - 36*(by*by) + 18*by*cy - 6*by*y + 6*cx*x + 6*cy*y - 2*dx*x - 2*dy*y;
+    coeffs[4] = 15*(ax*ax) - 30*ax*bx + 6*ax*cx - 6*ax*x + 15*(ay*ay) - 30*ay*by + 6*ay*cy - 6*ay*y + 9*(bx*bx) + 12*bx*x + 9*(by*by) + 12*by*y - 6*cx*x - 6*cy*y;
+    coeffs[5] = -6*(ax*ax) + 6*ax*bx + 6*ax*x - 6*(ay*ay) + 6*ay*by + 6*ay*y - 6*bx*x - 6*by*y;
+    coeffs[6] = (ax*ax) - 2*ax*x + (ay*ay) - 2*ay*y - (r*r) + (x*x) + (y*y);
 
     /* TODO better root finding method */
-    int iterations = ar_durand_kerner_roots(coeffs, 7, roots, 1000, 1e-15);
+    iterations = ar_durand_kerner_roots(coeffs, 7, roots, 1000, 1e-15);
 
     if (iterations < 0){
         printf("ERROR: durand kerner method failed to converge\n");
@@ -245,94 +249,191 @@ int ar_bezier3_circle_roots(
         return iterations;
     }
 
-    int i;
     for (i = 0; i < AR_BEZIER3_CIRCLE_ROOTS_COUNT; i++){
         vec2 root = roots[i];
+        vec2 q = ar_polynomial_eval_complex(coeffs, 7, roots[i]);
         AR_ASSERT_GOOD_NUMBER(root.x);
         AR_ASSERT_GOOD_NUMBER(root.y);
-        vec2 p = ar_polynomial_eval_complex(coeffs, 7, roots[i]);
-        if (v2len(p) > 1e-4){
-            printf("WARNING: root %f %e %e is not very close to zero: %e %e\n", v2len(p), root.x, root.y, p.x, p.y);
+        if (v2len(q) > 1e-4){
+            printf("WARNING: root %f %e %e is not very close to zero: %e %e\n", v2len(q), root.x, root.y, q.x, q.y);
         }
     }
 
     return iterations;
 }
 
-void ar_fit(const struct ar_bezier3 *curve){
-    /* TODO split loops */
+struct ar_bezier3_dist_info {
+    double t;
+    double distance_squared;
+    vec2 curve_point;
+    vec2 other_point;
+};
+
+struct ar_bezier3_dist_info ar_bezier3_arcs_distance(
+    const struct ar_bezier3 *curve,
+    const struct ar_arc *arcs
+){
+    /* TODO find better error measure */
+    int i, n = 100;
+    struct ar_bezier3_dist_info info;
+    info.t = AR_DBL_INF;
+    info.distance_squared = -AR_DBL_INF;
+    info.curve_point = v2(0.0, 0.0);
+    info.other_point = v2(0.0, 0.0);
+
+    for (i = 0; i < n; i++){
+        double t = 1.0/(n - 1) * i;
+        vec2 p = ar_bezier3_at(curve, t);
+        vec2 p0 = ar_arc_clamp(arcs + 0, p);
+        vec2 p1 = ar_arc_clamp(arcs + 1, p);
+        double d0 = v2dist2(p, p0);
+        double d1 = v2dist2(p, p1);
+        double d = d0 < d1 ? d0 : d1;
+
+        if (d > info.distance_squared){
+            info.t = t;
+            info.curve_point = p;
+            if (d0 < d1){
+                info.other_point = p0;
+                info.distance_squared = d0;
+            }else{
+                info.other_point = p1;
+                info.distance_squared = d1;
+            }
+        }
+    }
+
+    return info;
+}
+
+#include <math.h>
+
+void ar_bezier3_split(const struct ar_bezier3 *curve, double t, struct ar_bezier3 *curves){
     const vec2 *p = curve->control_points;
+    vec2 *q = curves[0].control_points;
+    vec2 *r = curves[1].control_points;
+
+    vec2 a = p[0];
+    vec2 b = p[1];
+    vec2 c = p[2];
+    vec2 d = p[3];
+
+    vec2 ab = v2lerp(a, b, t);
+    vec2 bc = v2lerp(b, c, t);
+    vec2 cd = v2lerp(c, d, t);
+
+    vec2 abc = v2lerp(ab, bc, t);
+    vec2 bcd = v2lerp(bc, cd, t);
+
+    vec2 abcd = v2lerp(abc, bcd, t);
+
+    q[0] = a;
+    q[1] = ab;
+    q[2] = abc;
+    q[3] = abcd;
+
+    r[0] = abcd;
+    r[1] = bcd;
+    r[2] = cd;
+    r[3] = d;
+}
+
+void ar_fit(const struct ar_bezier3 *curve, int max_depth){
+    int i;
+    int a_clockwise;
+    int b_clockwise;
+    int root_found = 0;
+    double c;
+    double s;
+    double radius;
+    double root_t;
+    double root_t_dist;
+    vec2 join;
+    vec2 center;
+    vec2 normal_a;
+    vec2 normal_b;
+    vec2 roots[AR_BEZIER3_CIRCLE_ROOTS_COUNT];
+    const vec2 *p = curve->control_points;
+    struct ar_arc arcs[2];
+    struct ar_bezier3_dist_info info;
+
+    /* TODO split loops */
 
     vec2 a = p[0];
     vec2 b = p[3];
+
+    /* TODO check if distance(a, p[1]) is zeroish */
+
     vec2 tangent_a = v2normalize(v2sub(p[1], a));
     vec2 tangent_b = v2normalize(v2sub(p[2], b));
+
     AR_ASSERT_GOOD_NUMBER(tangent_a.x);
     AR_ASSERT_GOOD_NUMBER(tangent_a.y);
     AR_ASSERT_GOOD_NUMBER(tangent_b.x);
     AR_ASSERT_GOOD_NUMBER(tangent_b.y);
 
+    AR_ASSERT_GOOD_NUMBER(normal_a.x);
+    AR_ASSERT_GOOD_NUMBER(normal_a.y);
+    AR_ASSERT_GOOD_NUMBER(normal_b.x);
+    AR_ASSERT_GOOD_NUMBER(normal_b.y);
+
     /* rotation matrix R = {{c, -s}, {s, c}} so that: R*tangent_a = tangent_b */
-    double c = v2dot(tangent_a, tangent_b);
-    double s = v2det(tangent_a, tangent_b);
+    c = v2dot(tangent_a, tangent_b);
+    s = v2det(tangent_a, tangent_b);
 
     /* find center of rotation so that: R*(a - center) + center = b */
-    vec2 center;
     center.x = (a.x + b.x - s*(a.y - b.y)/(1.0 + c))*0.5;
     center.y = (a.y + b.y + s*(a.x - b.x)/(1.0 + c))*0.5;
     AR_ASSERT_GOOD_NUMBER(center.x);
     AR_ASSERT_GOOD_NUMBER(center.y);
 
-    double radius = v2dist(a, center);
+    radius = v2dist(a, center);
 
-    vec2 roots[AR_BEZIER3_CIRCLE_ROOTS_COUNT];
     ar_bezier3_circle_roots(curve, center, radius, roots);
-    double root_t = 0.0;
-    double root_t_dist = AR_DBL_INF;
+    root_t = 0.0;
+    root_t_dist = AR_DBL_INF;
     /* find the root that is closest to t = 0.5 */
-    int i;
     for (i = 0; i < AR_BEZIER3_CIRCLE_ROOTS_COUNT; i++){
         vec2 root = roots[i];
         if (fabs(root.y) < 1e-5){
             double t = root.x;
             double t_dist = fabs(0.5 - t);
-            if (t_dist < root_t_dist){
+            if (!root_found || t_dist < root_t_dist){
+                root_found = 1;
                 root_t_dist = t_dist;
                 root_t = t;
             }
         }
     }
 
-    if (root_t_dist == AR_DBL_INF){
+    if (!root_found){
         printf("ERROR: didn't find root\n");
         return;
     }
 
-    vec2 join = ar_bezier3_at(curve, root_t);
+    join = ar_bezier3_at(curve, root_t);
 
-    if (join.x == a.x && join.y == a.y){
-        printf("ERROR: join == a\n");
-        return;
-    }
+    a_clockwise = v2isright(join, a, v2add(a, tangent_a));
+    b_clockwise = v2isright(join, b, v2add(b, tangent_b));
 
-    if (join.x == b.x && join.y == b.y){
-        printf("ERROR: join == b\n");
-        return;
-    }
+    normal_a = a_clockwise ? v2right(tangent_a) : v2left(tangent_a);
+    normal_b = b_clockwise ? v2right(tangent_b) : v2left(tangent_b);
 
-    int a_clockwise = v2isright(join, a, v2add(a, tangent_a));
-    int b_clockwise = v2isright(join, b, v2add(b, tangent_b));
-
-    vec2 normal_a = a_clockwise ? v2right(tangent_a) : v2left(tangent_a);
-    vec2 normal_b = b_clockwise ? v2right(tangent_b) : v2left(tangent_b);
-    AR_ASSERT_GOOD_NUMBER(normal_a.x);
-    AR_ASSERT_GOOD_NUMBER(normal_a.y);
-    AR_ASSERT_GOOD_NUMBER(normal_b.x);
-    AR_ASSERT_GOOD_NUMBER(normal_b.y);
-
-    struct ar_arc arcs[2];
     arc_from_points_and_normal(arcs + 0, a, join, normal_a, a_clockwise);
     arc_from_points_and_normal(arcs + 1, b, join, normal_b, b_clockwise);
+
+    info = ar_bezier3_arcs_distance(curve, arcs);
+
+    if (max_depth > 0 && info.distance_squared > 1e-2){
+        struct ar_bezier3 curves[2];
+        /*
+        printf("t: %f\n", info.t);
+        */
+        ar_bezier3_split(curve, info.t, curves);
+        ar_fit(curves + 0, max_depth - 1);
+        ar_fit(curves + 1, max_depth - 1);
+        return;
+    }
 
     if (show_control_points){
         ar_draw_points(control_points, 4, AR_RGB(100, 100, 100), GL_LINE_STRIP);
@@ -346,6 +447,7 @@ void ar_fit(const struct ar_bezier3 *curve){
     if (show_biarc){
         ar_arc_points(arcs + 0, points, 100, 0.0, 1.0);
         ar_draw_points(points, 100, AR_GREEN, GL_LINE_STRIP);
+
         ar_arc_points(arcs + 1, points, 100, 0.0, 1.0);
         ar_draw_points(points, 100, AR_RED, GL_LINE_STRIP);
     }
@@ -370,39 +472,37 @@ void ar_fit(const struct ar_bezier3 *curve){
     }
 }
 
-void on_frame(){
+void on_frame(void){
+    struct ar_bezier3 curve[1];
+    const vec2 *p = control_points;
+    mat4 projection = m4_ortho2d(0.0f, window.width, 0.0f, window.height);
+    mat23 world_to_screen = window.world_to_screen;
+    mat4 modelview = m4m23(world_to_screen);
+    mat4 mvp = m4mul(projection, modelview);
+
+    AR_GL_CHECK
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    AR_GL_CHECK
 
     window.width = glutGet(GLUT_WINDOW_WIDTH);
     window.height = glutGet(GLUT_WINDOW_HEIGHT);
 
     ar_shader_use(arc_shader);
-
     AR_GL_CHECK
 
-    mat4 projection = m4_ortho2d(0.0f, window.width, 0.0f, window.height);
-
-    AR_GL_CHECK
-
-    mat23 world_to_screen = window.world_to_screen;
-
-    mat4 modelview = m4m23(world_to_screen);
-
-    mat4 mvp = m4mul(projection, modelview);
-
-    upload_model_view_projection(mvp, umvp);
-
+    upload_model_view_projection(mvp);
     AR_GL_CHECK
 
     glActiveTexture(GL_TEXTURE0);
     ar_texture_bind(texture);
     glUniform1i(utex0, 0);
 
-    struct ar_bezier3 curve[1];
-    const vec2 *p = control_points;
     ar_bezier3_init(curve, p[0], p[1], p[2], p[3]);
-    ar_fit(curve);
+    ar_fit(curve, 10);
+    /*
+    printf("\n");
+    */
 
     /*
     TODO
@@ -443,11 +543,12 @@ void work(int frame){
 }
 
 void on_move(int x, int y){
+    vec2 old_world_mouse_pos, new_world_mouse_pos;
     window.mouse_pos_old = window.mouse_pos;
 
-    vec2 old_world_mouse_pos = screen_to_world(window.mouse_pos);
+    old_world_mouse_pos = screen_to_world(window.mouse_pos);
     window.mouse_pos = v2(x, window.height - 1 - y);
-    vec2 new_world_mouse_pos = screen_to_world(window.mouse_pos);
+    new_world_mouse_pos = screen_to_world(window.mouse_pos);
 
     if (window.is_mouse_button_down[GLUT_RIGHT_BUTTON]){
         vec2 world_delta = v2sub(new_world_mouse_pos, old_world_mouse_pos);
@@ -460,10 +561,9 @@ void on_move(int x, int y){
     }
 
     if (window.is_mouse_button_down[GLUT_LEFT_BUTTON]){
-
         vec2 world_mouse_pos = screen_to_world(window.mouse_pos);
-
         vec2 *closest = NULL;
+
         int i;
         for (i = 0; i < 4; i++){
             if (!closest || v2dist2(control_points[i], world_mouse_pos) < v2dist2(*closest, world_mouse_pos)){
@@ -492,9 +592,9 @@ void on_scroll(double forward){
 }
 
 void on_button(int button, int action, int x, int y){
-    on_move(x, y);
-
     int down = action == GLUT_DOWN;
+
+    on_move(x, y);
 
     if (button == 3 && down) on_scroll(+1.0);
     if (button == 4 && down) on_scroll(-1.0);
@@ -518,23 +618,11 @@ void on_key_up(unsigned char key, int x, int y){
     window.is_key_down[key] = 0;
 }
 
+glad_func_ptr ar_get_proc_address(const char *name){
+    return (glad_func_ptr)wglGetProcAddress(name);
+}
+
 int main(int argc, char **argv){
-    window.width = 512;
-    window.height = 512;
-    window.world_to_screen = m23id();
-
-    control_points[0] = v2(100, 100);
-    control_points[1] = v2(500, 150);
-    control_points[2] = v2(50, 300);
-    control_points[3] = v2(400, 500);
-
-    glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_STENCIL);
-    glutInitWindowSize(window.width, window.height);
-    glutCreateWindow("");
-
-    glewInit();
-
     const char *vert_src = AR_STR(
         attribute vec4 apos;
         attribute vec2 atex;
@@ -565,6 +653,31 @@ int main(int argc, char **argv){
         }
     );
 
+    int x, y;
+    int nx = 16;
+    int ny = 16;
+    uint32_t texture_data[16*16];
+    for (y = 0; y < ny; y++) for (x = 0; x < nx; x++){
+        texture_data[x + y*nx] =  0xffffffff;
+    }
+
+    window.width = 512;
+    window.height = 512;
+    window.world_to_screen = m23id();
+
+    control_points[0] = v2(100, 100);
+    control_points[1] = v2(500, 150);
+    control_points[2] = v2(50, 300);
+    control_points[3] = v2(400, 500);
+
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_STENCIL);
+    glutInitWindowSize(window.width, window.height);
+    glutCreateWindow("");
+
+    gladLoadGLES2Loader(ar_get_proc_address);
+
+
     ar_shader_init(arc_shader, vert_src, frag_src);
 
     umvp  = glGetUniformLocation(arc_shader->program, "umvp");
@@ -579,14 +692,7 @@ int main(int argc, char **argv){
     assert(umvp != -1);
     assert(utex0 != -1);
 
-    int x, y;
-    int nx = 16;
-    int ny = 16;
-    uint32_t data[16*16];
-    for (y = 0; y < ny; y++) for (x = 0; x < nx; x++){
-        data[x + y*nx] =  0xffffffff;
-    }
-    ar_texture_init(texture, nx, ny, data);
+    ar_texture_init(texture, nx, ny, texture_data);
 
     glutCreateMenu(menu_callback);
     glutAddMenuEntry("Control points", 4);

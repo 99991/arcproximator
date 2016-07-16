@@ -1,9 +1,10 @@
 #include "ar_draw.h"
 
 void ar_draw(const struct ar_vertex *vertices, int n_vertices, GLenum mode, GLint apos, GLint atex, GLint acol){
+    GLuint vbo;
+
     if (n_vertices == 0) return;
 
-    GLuint vbo;
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(*vertices)*n_vertices, vertices, GL_STATIC_DRAW);

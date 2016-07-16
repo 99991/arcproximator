@@ -1,10 +1,12 @@
 #include "ar_durand_kerner_roots.h"
 
-AR_INLINE vec2 cmul(vec2 a, vec2 b){
+#include <stdlib.h>
+
+static vec2 cmul(vec2 a, vec2 b){
     return v2(a.x*b.x - a.y*b.y, a.x*b.y + a.y*b.x);
 }
 
-AR_INLINE vec2 cdiv(vec2 a, vec2 b){
+static vec2 cdiv(vec2 a, vec2 b){
     return v2smul(1.0/v2len2(b), v2(v2dot(a, b), -v2det(a, b)));
 }
 
@@ -26,18 +28,18 @@ int ar_durand_kerner_roots(
     int max_iterations,
     double tolerance
 ){
+    int i;
+    int iteration;
     int n_roots = n_coeffs - 1;
 
-    int i;
+    vec2 *new_roots = (vec2*)malloc(n_roots*sizeof(*new_roots));
 
     roots[0] = v2(1.0, 0.0);
     for (i = 1; i < n_roots; i++){
         roots[i] = cmul(roots[i - 1], v2(0.4, 0.8));
     }
 
-    int iteration;
     for (iteration = 0; iteration < max_iterations; iteration++){
-        vec2 new_roots[n_roots];
         vec2 max_change = v2(0.0, 0.0);
 
         for (i = 0; i < n_roots; i++){
@@ -70,6 +72,8 @@ int ar_durand_kerner_roots(
 
         if (v2len2(max_change) < tolerance) return iteration;
     }
+
+    free(new_roots);
 
     return -1;
 }
