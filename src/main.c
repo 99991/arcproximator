@@ -328,12 +328,14 @@ void ar_fit(const struct ar_bezier3 *curve, double max_distance, int max_depth){
     const vec2 *p = curve->control_points;
     struct ar_arc arcs[2];
 
+    /* TODO scale input to [0, 1] and then back to input size */
+
     /* TODO split loops */
 
     vec2 a = p[0];
     vec2 b = p[3];
 
-    /* TODO check if distance(a, p[1]) is zeroish */
+    /* TODO check if distance(a, p[1]) etc is zeroish */
 
     vec2 tangent_a = v2normalize(v2sub(p[1], a));
     vec2 tangent_b = v2normalize(v2sub(p[2], b));
