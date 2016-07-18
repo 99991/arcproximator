@@ -178,7 +178,7 @@
 	<X11/Xmd.h>
 	<GL/glew.h>
 
-1468600534 source:c:\users\john\desktop\arcproximator\src\main.c
+1468861854 source:c:\users\john\desktop\arcproximator\src\main.c
 	"math/ar_bezier3.h"
 	"math/ar_arc.h"
 	"graphics/ar_shader.h"
@@ -188,6 +188,7 @@
 	"math/vec2.h"
 	"math/mat23.h"
 	"math/mat4.h"
+	"math/ar_polynomial.h"
 	<assert.h>
 	<stdio.h>
 	"math/ar_durand_kerner_roots.h"
@@ -301,4 +302,10 @@
 1468600544 source:c:\users\john\desktop\arcproximator\src\util\ar_util.c
 	"ar_util.h"
 	<stdio.h>
+
+1468862161 source:c:\users\john\desktop\arcproximator\src\math\ar_polynomial.c
+	"ar_polynomial.h"
+	<stdio.h>
+
+1468861145 c:\users\john\desktop\arcproximator\src\math\ar_polynomial.h
 

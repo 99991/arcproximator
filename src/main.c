@@ -7,6 +7,7 @@
 #include "math/vec2.h"
 #include "math/mat23.h"
 #include "math/mat4.h"
+#include "math/ar_polynomial.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -194,18 +195,12 @@ void menu_callback(int option){
     }
 }
 
-#include "math/ar_durand_kerner_roots.h"
-
-#define AR_BEZIER3_CIRCLE_ROOTS_COUNT 6
-
-int ar_bezier3_circle_roots(
+double ar_bezier3_circle_intersection(
     const struct ar_bezier3 *curve,
     vec2 center,
     double radius,
-    vec2 *roots
+    double tolerance
 ){
-    int i;
-    int iterations;
     const vec2 *p = curve->control_points;
     double ax = p[0].x;
     double ay = p[0].y;
@@ -239,27 +234,7 @@ int ar_bezier3_circle_roots(
     coeffs[5] = -6*(ax*ax) + 6*ax*bx + 6*ax*x - 6*(ay*ay) + 6*ay*by + 6*ay*y - 6*bx*x - 6*by*y;
     coeffs[6] = (ax*ax) - 2*ax*x + (ay*ay) - 2*ay*y - (r*r) + (x*x) + (y*y);
 
-    /* TODO better root finding method */
-    iterations = ar_durand_kerner_roots(coeffs, 7, roots, 1000, 1e-15);
-
-    if (iterations < 0){
-        printf("ERROR: durand kerner method failed to converge\n");
-        /* TODO remove this */
-        exit(-1);
-        return iterations;
-    }
-
-    for (i = 0; i < AR_BEZIER3_CIRCLE_ROOTS_COUNT; i++){
-        vec2 root = roots[i];
-        vec2 q = ar_polynomial_eval_complex(coeffs, 7, roots[i]);
-        AR_ASSERT_GOOD_NUMBER(root.x);
-        AR_ASSERT_GOOD_NUMBER(root.y);
-        if (v2len(q) > 1e-4){
-            printf("WARNING: root %f %e %e is not very close to zero: %e %e\n", v2len(q), root.x, root.y, q.x, q.y);
-        }
-    }
-
-    return iterations;
+    return ar_polynomial_root(coeffs, 7, 0.0, 1.0, tolerance);
 }
 
 struct ar_bezier3_dist_info {
@@ -338,24 +313,20 @@ void ar_bezier3_split(const struct ar_bezier3 *curve, double t, struct ar_bezier
     r[3] = d;
 }
 
-void ar_fit(const struct ar_bezier3 *curve, int max_depth){
-    int i;
+void ar_fit(const struct ar_bezier3 *curve, double max_distance, int max_depth){
     int a_clockwise;
     int b_clockwise;
-    int root_found = 0;
     double c;
     double s;
     double radius;
-    double root_t;
-    double root_t_dist;
     vec2 join;
     vec2 center;
     vec2 normal_a;
     vec2 normal_b;
-    vec2 roots[AR_BEZIER3_CIRCLE_ROOTS_COUNT];
+    double root_t;
+    struct ar_bezier3_dist_info info;
     const vec2 *p = curve->control_points;
     struct ar_arc arcs[2];
-    struct ar_bezier3_dist_info info;
 
     /* TODO split loops */
 
@@ -389,29 +360,14 @@ void ar_fit(const struct ar_bezier3 *curve, int max_depth){
 
     radius = v2dist(a, center);
 
-    ar_bezier3_circle_roots(curve, center, radius, roots);
-    root_t = 0.0;
-    root_t_dist = AR_DBL_INF;
-    /* find the root that is closest to t = 0.5 */
-    for (i = 0; i < AR_BEZIER3_CIRCLE_ROOTS_COUNT; i++){
-        vec2 root = roots[i];
-        if (fabs(root.y) < 1e-5){
-            double t = root.x;
-            double t_dist = fabs(0.5 - t);
-            if (!root_found || t_dist < root_t_dist){
-                root_found = 1;
-                root_t_dist = t_dist;
-                root_t = t;
-            }
-        }
-    }
-
-    if (!root_found){
-        printf("ERROR: didn't find root\n");
-        return;
-    }
+    /* Tolerance not that important since join is projected onto circle. */
+    /* This is a heuristic anyway. */
+    root_t = ar_bezier3_circle_intersection(curve, center, radius, 1e-5);
 
     join = ar_bezier3_at(curve, root_t);
+
+    /* Ensure join really is on circle since intersection might be inaccurate. */
+    join = v2add(center, v2scale(v2sub(join, center), radius));
 
     a_clockwise = v2isright(join, a, v2add(a, tangent_a));
     b_clockwise = v2isright(join, b, v2add(b, tangent_b));
@@ -424,16 +380,22 @@ void ar_fit(const struct ar_bezier3 *curve, int max_depth){
 
     info = ar_bezier3_arcs_distance(curve, arcs);
 
-    if (max_depth > 0 && info.distance_squared > 1e-2){
+    if (max_depth > 0 && info.distance_squared > max_distance){
         struct ar_bezier3 curves[2];
         /*
         printf("t: %f\n", info.t);
         */
         ar_bezier3_split(curve, info.t, curves);
-        ar_fit(curves + 0, max_depth - 1);
-        ar_fit(curves + 1, max_depth - 1);
+        ar_fit(curves + 0, max_distance, max_depth - 1);
+        ar_fit(curves + 1, max_distance, max_depth - 1);
         return;
     }
+
+    if (max_depth == 0){
+        printf("WARNING: Maximum curve subdivisions reached. Fit may be worse than max_distance.\n");
+    }
+
+    ar_bezier3_draw(curve, AR_WHITE);
 
     if (show_control_points){
         ar_draw_points(control_points, 4, AR_RGB(100, 100, 100), GL_LINE_STRIP);
@@ -441,8 +403,6 @@ void ar_fit(const struct ar_bezier3 *curve, int max_depth){
         ar_draw_arrow(a, p[1], 5.0, AR_GREEN);
         ar_draw_arrow(b, p[2], 5.0, AR_RED);
     }
-
-    ar_bezier3_draw(curve, AR_WHITE);
 
     if (show_biarc){
         ar_arc_points(arcs + 0, points, 100, 0.0, 1.0);
@@ -499,7 +459,7 @@ void on_frame(void){
     glUniform1i(utex0, 0);
 
     ar_bezier3_init(curve, p[0], p[1], p[2], p[3]);
-    ar_fit(curve, 10);
+    ar_fit(curve, 1e-2, 10);
     /*
     printf("\n");
     */
