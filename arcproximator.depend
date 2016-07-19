@@ -178,7 +178,7 @@
 	<X11/Xmd.h>
 	<GL/glew.h>
 
-1468939631 source:c:\users\john\desktop\arcproximator\src\main.c
+1468960354 source:c:\users\john\desktop\arcproximator\src\main.c
 	"math/ar_bezier3.h"
 	"math/ar_arc.h"
 	"graphics/ar_shader.h"
@@ -222,10 +222,10 @@
 
 1468330743 3.h"
 
-1468595581 source:c:\users\john\desktop\arcproximator\src\math\ar_arc.c
+1468962085 source:c:\users\john\desktop\arcproximator\src\math\ar_arc.c
 	"ar_arc.h"
 
-1468330625 c:\users\john\desktop\arcproximator\src\math\ar_arc.h
+1468958304 c:\users\john\desktop\arcproximator\src\math\ar_arc.h
 	"vec2.h"
 
 1468597439 c:\users\john\desktop\arcproximator\src\util\ar_util.h

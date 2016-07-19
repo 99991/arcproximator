@@ -6,27 +6,40 @@ void ar_arc_init(
     double radius,
     vec2 start,
     vec2 end,
-    int clockwise
+    enum ar_arc_type arc_type
 ){
     arc->center = center;
     arc->start = start;
     arc->end = end;
     arc->radius = radius;
-    arc->clockwise = clockwise;
+    arc->arc_type = arc_type;
 }
 
 void ar_arc_points(const struct ar_arc *arc, vec2 *points, int n, double t0, double t1){
     int i;
-    vec2 center = arc->center;
     vec2 start = arc->start;
     vec2 end = arc->end;
+    vec2 center = arc->center;
     double radius = arc->radius;
 
     double start_angle = v2angle(v2sub(start, center));
     double end_angle   = v2angle(v2sub(end, center));
 
-    if (arc->clockwise){
-        AR_SWAP(double, start_angle, end_angle);
+    switch (arc->arc_type){
+        case AR_ARC_COUNTERCLOCKWISE:
+        break;
+
+        case AR_ARC_CLOCKWISE:
+            AR_SWAP(double, start_angle, end_angle);
+            AR_SWAP(double, t0, t1);
+        break;
+
+        case AR_ARC_LINE:
+            for (i = 0; i < n; i++){
+                double u = 1.0/(n - 1) * i;
+                points[i] = v2lerp(start, end, u);
+            }
+        return;
     }
 
     if (end_angle < start_angle) end_angle += 2.0*AR_PI;
@@ -52,7 +65,7 @@ int ar_ccw_arc_encloses(const struct ar_arc *arc, vec2 p){
 }
 
 int ar_arc_encloses(const struct ar_arc *arc, vec2 p){
-    return ar_ccw_arc_encloses(arc, p) ^ arc->clockwise;
+    return ar_ccw_arc_encloses(arc, p) ^ arc->arc_type;
 }
 
 vec2 ar_arc_clamp(const struct ar_arc *arc, vec2 p){

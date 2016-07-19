@@ -129,7 +129,10 @@ void ar_draw_arrow(vec2 a, vec2 b, double r, uint32_t color){
 }
 
 void arc_from_points_and_normal(struct ar_arc *arc, vec2 start, vec2 end, vec2 start_normal, int clockwise){
+    /* Create arc from normal, starting and end point. */
+    /* start + radius*start_normal = center */
     vec2 v = v2sub(end, start);
+    /* TODO handle case where normal is perpendicular to v */
     double radius = v2dot(v, v)*0.5/v2dot(v, start_normal);
     vec2 center = v2add(start, v2smul(radius, start_normal));
     AR_ASSERT_GOOD_NUMBER(radius);
@@ -206,17 +209,6 @@ double ar_bezier3_circle_intersection(
     double radius,
     double tolerance
 ){
-    /*
-    const vec2 *p = curve->control_points;
-    double ax = p[0].x;
-    double ay = p[0].y;
-    double bx = p[1].x;
-    double by = p[1].y;
-    double cx = p[2].x;
-    double cy = p[2].y;
-    double dx = p[3].x;
-    double dy = p[3].y;
-    */
     double ax = a.x;
     double ay = a.y;
     double bx = b.x;
@@ -339,7 +331,14 @@ void ar_bezier3_split(const struct ar_bezier3 *curve, double t, struct ar_bezier
     r[3] = d;
 }
 
-void ar_fit(const struct ar_bezier3 *curve, double max_distance, int max_depth){
+#define MAX_ARCS ((1 << 16)*2)
+
+void ar_arc_reverse(struct ar_arc *arc){
+    AR_SWAP(vec2, arc->start, arc->end);
+    arc->arc_type = !arc->arc_type;
+}
+
+int ar_fit(const struct ar_bezier3 *curve, double max_distance, int max_depth, struct ar_arc *output_arcs){
     const vec2 *p = curve->control_points;
 
     /* TODO scale input to [0, 1] and then back to input size */
@@ -368,8 +367,8 @@ void ar_fit(const struct ar_bezier3 *curve, double max_distance, int max_depth){
     if (cb_is_short){
         /* if the middle segment and any other segment is short, output line */
         if (ba_is_short || cd_is_short){
-            ar_draw_line(a, b, AR_YELLOW);
-            return;
+            ar_arc_init(output_arcs, v2(0.0, 0.0), 0.0, a, b, AR_ARC_LINE);
+            return 1;
         }
     }else{
         /* middle segment is long */
@@ -392,8 +391,8 @@ void ar_fit(const struct ar_bezier3 *curve, double max_distance, int max_depth){
 
         /* first and last but not middle segment are short */
         if (ba_is_short && cd_is_short){
-            ar_draw_line(a, b, AR_YELLOW);
-            return;
+            ar_arc_init(output_arcs, v2(0.0, 0.0), 0.0, a, b, AR_ARC_LINE);
+            return 1;
         }
     }
 
@@ -404,8 +403,7 @@ void ar_fit(const struct ar_bezier3 *curve, double max_distance, int max_depth){
     double co = v2dot(tangent_ba, tangent_cd);
     double si = v2det(tangent_ba, tangent_cd);
 
-    /* TODO co = -1 if curve is S shape with parallel tangents
-    pointing in opposite directions which triggers division by zero. */
+    /* TODO handle co = -1 for tangents pointing in opposite directions. */
 
     /* find center of rotation so that: R*(a - center) + center = b */
     vec2 center;
@@ -434,15 +432,20 @@ void ar_fit(const struct ar_bezier3 *curve, double max_distance, int max_depth){
     arc_from_points_and_normal(arcs + 0, a, join, normal_a, a_clockwise);
     arc_from_points_and_normal(arcs + 1, d, join, normal_d, d_clockwise);
 
+    ar_arc_reverse(arcs + 1);
+
     struct ar_bezier3_dist_info info = ar_bezier3_arcs_distance(curve, arcs);
 
     if (max_depth > 0 && info.distance_squared > max_distance){
         struct ar_bezier3 curves[2];
         ar_bezier3_split(curve, info.t, curves);
-        ar_fit(curves + 0, max_distance, max_depth - 1);
-        ar_fit(curves + 1, max_distance, max_depth - 1);
-        return;
+        int n_arcs0 = ar_fit(curves + 0, max_distance, max_depth - 1, output_arcs);
+        int n_arcs1 = ar_fit(curves + 1, max_distance, max_depth - 1, output_arcs + n_arcs0);
+        return n_arcs0 + n_arcs1;
     }
+
+    output_arcs[0] = arcs[0];
+    output_arcs[1] = arcs[1];
 
     if (max_depth == 0){
         printf("WARNING: Maximum curve subdivisions reached. Fit may be worse than max_distance.\n");
@@ -468,6 +471,8 @@ void ar_fit(const struct ar_bezier3 *curve, double max_distance, int max_depth){
     if (show_solution_circle){
         ar_draw_circle(center, radius, AR_YELLOW);
     }
+
+    return 2;
 }
 
 void on_frame(void){
@@ -497,7 +502,17 @@ void on_frame(void){
     glUniform1i(utex0, 0);
 
     ar_bezier3_init(curve, p[0], p[1], p[2], p[3]);
-    ar_fit(curve, 1e-2, 16);
+    int max_arcs = (1 << 16)*2;
+    struct ar_arc *arcs = (struct ar_arc*)malloc(max_arcs*sizeof(*arcs));
+    int n_arcs = ar_fit(curve, 0.1, 16, arcs);
+    int i, n = 3;
+    vec2 *pts = (vec2*)malloc(n_arcs*n*sizeof(*pts));
+    for (i = 0; i < n_arcs; i++){
+        ar_arc_points(arcs + i, pts + i*n, n, 0.0, 1.0);
+    }
+    ar_draw_points(pts, n*n_arcs, AR_YELLOW, GL_LINE_STRIP);
+    free(pts);
+    free(arcs);
 
     /*
     TODO
@@ -661,10 +676,9 @@ int main(int argc, char **argv){
     window.world_to_screen = m23id();
 
     control_points[0] = v2(100, 100);
-    control_points[1] = v2(500, 150);
-    control_points[1] = v2(100, 100);
-    control_points[2] = v2(50, 300);
-    control_points[3] = v2(400, 500);
+    control_points[1] = v2(200, 400);
+    control_points[2] = v2(400, 100);
+    control_points[3] = v2(400, 400);
 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_STENCIL);

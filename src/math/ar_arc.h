@@ -3,10 +3,19 @@
 
 #include "vec2.h"
 
+enum ar_arc_type {
+    /* counterclockwise arc from start to end */
+    AR_ARC_COUNTERCLOCKWISE,
+    /* clockwise arc from star to end */
+    AR_ARC_CLOCKWISE,
+    /* arc is actually line from start to end */
+    AR_ARC_LINE,
+};
+
 struct ar_arc {
     vec2 center, start, end;
     double radius;
-    int clockwise;
+    enum ar_arc_type arc_type;
 };
 
 void ar_arc_init(
@@ -15,7 +24,7 @@ void ar_arc_init(
     double radius,
     vec2 start,
     vec2 end,
-    int clockwise
+    enum ar_arc_type arc_type
 );
 
 void ar_arc_points(const struct ar_arc *arc, vec2 *points, int n, double t0, double t1);
