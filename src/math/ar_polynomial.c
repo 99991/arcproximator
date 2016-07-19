@@ -48,7 +48,9 @@ double ar_polynomial_root(double *coefficients, int n_coefficients, double x0, d
 
         pm = ar_polynomial_eval(coefficients, n_coefficients, m);
 
-        if (-tolerance < pm && pm < tolerance) return m;
+        if (-tolerance < pm && pm < tolerance){
+            return m;
+        }
 
         px0 = ar_polynomial_eval(coefficients, n_coefficients, x0);
 
