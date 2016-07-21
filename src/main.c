@@ -107,16 +107,25 @@ void ar_circle_points(vec2 *points, int n, vec2 center, double radius){
     }
 }
 
-vec2 points[100];
-
 void ar_draw_circle(vec2 center, double radius, uint32_t color){
-    ar_circle_points(points, 100, center, radius);
-    ar_draw_points(points, 100, color, GL_LINE_LOOP);
+    int n = 100;
+    vec2 *points = (vec2*)malloc(sizeof*(points)*n);
+    ar_circle_points(points, n, center, radius);
+    ar_draw_points(points, n, color, GL_LINE_LOOP);
+    free(points);
+}
+
+void ar_draw_arc(struct ar_arc *arc, uint32_t color){
+    int n = 100;
+    vec2 *points = (vec2*)malloc(n*sizeof(*points));
+    ar_arc_points(arc, points, n, 0.0, 1.0);
+    ar_draw_points(points, n, color, GL_LINE_STRIP);
 }
 
 void ar_draw_arrow(vec2 a, vec2 b, double r, uint32_t color){
     vec2 d = v2scale(v2sub(b, a), r);
 
+    vec2 points[3];
     points[0] = a;
     points[1] = b;
     ar_draw_points(points, 2, color, GL_LINES);
@@ -461,11 +470,8 @@ int ar_fit(const struct ar_bezier3 *curve, double max_distance, int max_depth, s
     }
 
     if (show_biarc){
-        ar_arc_points(arcs + 0, points, 100, 0.0, 1.0);
-        ar_draw_points(points, 100, AR_GREEN, GL_LINE_STRIP);
-
-        ar_arc_points(arcs + 1, points, 100, 0.0, 1.0);
-        ar_draw_points(points, 100, AR_RED, GL_LINE_STRIP);
+        ar_draw_arc(arcs + 0, AR_GREEN);
+        ar_draw_arc(arcs + 1, AR_RED);
     }
 
     if (show_solution_circle){
