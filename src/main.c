@@ -516,15 +516,15 @@ void on_frame(void){
     ar_fit(curve, 0.1, 16, arcs);
     int n = 3;
     int n_arcs = arcs->n;
-    vec2 *pts = (vec2*)malloc(n_arcs*n*sizeof(*pts));
-    vec2 *q = pts;
+    vec2 *points = (vec2*)malloc(n_arcs*n*sizeof(*points));
+    vec2 *points_ptr = points;
     struct ar_arc_list_node *node;
     for (node = arcs->head; node != NULL; node = node->next){
-        ar_arc_points(&node->value, q, n, 0.0, 1.0);
-        q += n;
+        ar_arc_points(&node->value, points_ptr, n, 0.0, 1.0);
+        points_ptr += n;
     }
-    ar_draw_points(pts, n*n_arcs, AR_YELLOW, GL_LINE_STRIP);
-    free(pts);
+    ar_draw_points(points, n*n_arcs, AR_YELLOW, GL_LINE_STRIP);
+    free(points);
     ar_arc_list_free(arcs);
 
     /*
