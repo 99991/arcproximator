@@ -37,11 +37,9 @@
 			<Add option="-Winline" />
 			<Add option="-Wunreachable-code" />
 			<Add option="-Wmissing-include-dirs" />
-			<Add option="-Wswitch-default" />
 			<Add option="-pedantic" />
 			<Add option="-Wextra" />
 			<Add option="-Wall" />
-			<Add option="-ansi" />
 			<Add option="-Wbad-function-cast" />
 			<Add option="-Wnested-externs" />
 			<Add option="-Wlogical-op" />
@@ -87,6 +85,10 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/math/ar_durand_kerner_roots.h" />
+		<Unit filename="src/math/ar_polynomial.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/math/ar_polynomial.h" />
 		<Unit filename="src/math/mat23.c">
 			<Option compilerVar="CC" />
 		</Unit>

@@ -340,14 +340,14 @@ void ar_bezier3_split(const struct ar_bezier3 *curve, double t, struct ar_bezier
     r[3] = d;
 }
 
-#define MAX_ARCS ((1 << 16)*2)
-
 void ar_arc_reverse(struct ar_arc *arc){
     AR_SWAP(vec2, arc->start, arc->end);
     arc->arc_type = !arc->arc_type;
 }
 
-int ar_fit(const struct ar_bezier3 *curve, double max_distance, int max_depth, struct ar_arc *output_arcs){
+#include "math/ar_arc_list.h"
+
+void ar_fit(const struct ar_bezier3 *curve, double max_distance, int max_depth, struct ar_arc_list *output_arcs){
     const vec2 *p = curve->control_points;
 
     /* TODO scale input to [0, 1] and then back to input size */
@@ -376,8 +376,10 @@ int ar_fit(const struct ar_bezier3 *curve, double max_distance, int max_depth, s
     if (cb_is_short){
         /* if the middle segment and any other segment is short, output line */
         if (ba_is_short || cd_is_short){
-            ar_arc_init(output_arcs, v2(0.0, 0.0), 0.0, a, b, AR_ARC_LINE);
-            return 1;
+            struct ar_arc arc[1];
+            ar_arc_init(arc, v2(0.0, 0.0), 0.0, a, b, AR_ARC_LINE);
+            ar_arc_list_add_tail(output_arcs, arc[0]);
+            return;
         }
     }else{
         /* middle segment is long */
@@ -400,8 +402,10 @@ int ar_fit(const struct ar_bezier3 *curve, double max_distance, int max_depth, s
 
         /* first and last but not middle segment are short */
         if (ba_is_short && cd_is_short){
-            ar_arc_init(output_arcs, v2(0.0, 0.0), 0.0, a, b, AR_ARC_LINE);
-            return 1;
+            struct ar_arc arc[1];
+            ar_arc_init(arc, v2(0.0, 0.0), 0.0, a, b, AR_ARC_LINE);
+            ar_arc_list_add_tail(output_arcs, arc[0]);
+            return;
         }
     }
 
@@ -448,13 +452,13 @@ int ar_fit(const struct ar_bezier3 *curve, double max_distance, int max_depth, s
     if (max_depth > 0 && info.distance_squared > max_distance){
         struct ar_bezier3 curves[2];
         ar_bezier3_split(curve, info.t, curves);
-        int n_arcs0 = ar_fit(curves + 0, max_distance, max_depth - 1, output_arcs);
-        int n_arcs1 = ar_fit(curves + 1, max_distance, max_depth - 1, output_arcs + n_arcs0);
-        return n_arcs0 + n_arcs1;
+        ar_fit(curves + 0, max_distance, max_depth - 1, output_arcs);
+        ar_fit(curves + 1, max_distance, max_depth - 1, output_arcs);
+        return;
     }
 
-    output_arcs[0] = arcs[0];
-    output_arcs[1] = arcs[1];
+    ar_arc_list_add_tail(output_arcs, arcs[0]);
+    ar_arc_list_add_tail(output_arcs, arcs[1]);
 
     if (max_depth == 0){
         printf("WARNING: Maximum curve subdivisions reached. Fit may be worse than max_distance.\n");
@@ -477,8 +481,6 @@ int ar_fit(const struct ar_bezier3 *curve, double max_distance, int max_depth, s
     if (show_solution_circle){
         ar_draw_circle(center, radius, AR_YELLOW);
     }
-
-    return 2;
 }
 
 void on_frame(void){
@@ -508,17 +510,22 @@ void on_frame(void){
     glUniform1i(utex0, 0);
 
     ar_bezier3_init(curve, p[0], p[1], p[2], p[3]);
-    int max_arcs = (1 << 16)*2;
-    struct ar_arc *arcs = (struct ar_arc*)malloc(max_arcs*sizeof(*arcs));
-    int n_arcs = ar_fit(curve, 0.1, 16, arcs);
-    int i, n = 3;
+    struct ar_arc_list arcs[1];
+    ar_arc_list_init(arcs);
+
+    ar_fit(curve, 0.1, 16, arcs);
+    int n = 3;
+    int n_arcs = arcs->n;
     vec2 *pts = (vec2*)malloc(n_arcs*n*sizeof(*pts));
-    for (i = 0; i < n_arcs; i++){
-        ar_arc_points(arcs + i, pts + i*n, n, 0.0, 1.0);
+    vec2 *q = pts;
+    struct ar_arc_list_node *node;
+    for (node = arcs->head; node != NULL; node = node->next){
+        ar_arc_points(&node->value, q, n, 0.0, 1.0);
+        q += n;
     }
     ar_draw_points(pts, n*n_arcs, AR_YELLOW, GL_LINE_STRIP);
     free(pts);
-    free(arcs);
+    ar_arc_list_free(arcs);
 
     /*
     TODO
