@@ -109,27 +109,26 @@
 1468256235 c:\users\john\desktop\arcproximator\graphics\my_vertex.h
 	<stdint.h>
 
-1468588388 source:c:\users\john\desktop\arcproximator\src\graphics\ar_draw.c
+1469123688 source:c:\users\john\desktop\arcproximator\src\graphics\ar_draw.c
 	"ar_draw.h"
 
 1468261225 c:\users\john\desktop\arcproximator\src\graphics\ar_draw.h
 	"ar_gl.h"
 	"ar_vertex.h"
 
-1468597647 c:\users\john\desktop\arcproximator\src\graphics\ar_gl.h
-	<GL/freeglut.h>
-	"../glad/glad.h"
-	<GL/freeglut.h>
-	<glad/glad.h>
+1469123982 c:\users\john\desktop\arcproximator\src\graphics\ar_gl.h
+	<stddef.h>
+	<GL/gl.h>
 
 1468261158 c:\users\john\desktop\arcproximator\src\graphics\ar_vertex.h
 	<stdint.h>
 
-1468261224 source:c:\users\john\desktop\arcproximator\src\graphics\ar_gl.c
+1469123894 source:c:\users\john\desktop\arcproximator\src\graphics\ar_gl.c
 	"ar_gl.h"
+	<GL/freeglut.h>
 	<stdio.h>
 
-1468588388 source:c:\users\john\desktop\arcproximator\src\graphics\ar_shader.c
+1469123699 source:c:\users\john\desktop\arcproximator\src\graphics\ar_shader.c
 	"ar_shader.h"
 	<stdio.h>
 	<string.h>
@@ -138,7 +137,7 @@
 1468261221 c:\users\john\desktop\arcproximator\src\graphics\ar_shader.h
 	"ar_gl.h"
 
-1468261186 source:c:\users\john\desktop\arcproximator\src\graphics\ar_texture.c
+1469122958 source:c:\users\john\desktop\arcproximator\src\graphics\ar_texture.c
 	"ar_texture.h"
 
 1468261222 c:\users\john\desktop\arcproximator\src\graphics\ar_texture.h
@@ -178,7 +177,7 @@
 	<X11/Xmd.h>
 	<GL/glew.h>
 
-1469113922 source:c:\users\john\desktop\arcproximator\src\main.c
+1469123716 source:c:\users\john\desktop\arcproximator\src\main.c
 	"math/ar_bezier3.h"
 	"math/ar_arc.h"
 	"graphics/ar_shader.h"
@@ -191,7 +190,9 @@
 	"math/ar_polynomial.h"
 	<assert.h>
 	<stdio.h>
+	<GL/freeglut.h>
 	<math.h>
+	"math/ar_arc_list.h"
 
 1468333818 urand_kerner_roots.h"
 

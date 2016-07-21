@@ -12,6 +12,8 @@
 #include <assert.h>
 #include <stdio.h>
 
+#include <GL/freeglut.h>
+
 struct ar_window {
     int width;
     int height;
@@ -69,7 +71,7 @@ void upload_model_view_projection(mat4 mvp){
             data[i + j*4] = m4at(mvp, i, j);
         }
     }
-    glUniformMatrix4fv(umvp, 1, 0, data);
+    ar_glUniformMatrix4fv(umvp, 1, 0, data);
 }
 
 void ar_draw_points(const vec2 *points, int n, uint32_t color, GLenum mode){
@@ -492,8 +494,8 @@ void on_frame(void){
     mat4 mvp = m4mul(projection, modelview);
 
     AR_GL_CHECK
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    ar_glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    ar_glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     AR_GL_CHECK
 
     window.width = glutGet(GLUT_WINDOW_WIDTH);
@@ -505,9 +507,9 @@ void on_frame(void){
     upload_model_view_projection(mvp);
     AR_GL_CHECK
 
-    glActiveTexture(GL_TEXTURE0);
+    ar_glActiveTexture(GL_TEXTURE0);
     ar_texture_bind(texture);
-    glUniform1i(utex0, 0);
+    ar_glUniform1i(utex0, 0);
 
     ar_bezier3_init(curve, p[0], p[1], p[2], p[3]);
     struct ar_arc_list arcs[1];
@@ -531,19 +533,19 @@ void on_frame(void){
     TODO
     stencil polygon
     {
-        glDisable(GL_CULL_FACE);
+        ar_glDisable(GL_CULL_FACE);
 
-        glEnable(GL_STENCIL_TEST);
-        glClearStencil(0);
-        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-        glStencilFunc(GL_NEVER, 0, 1);
-        glStencilOp(GL_INVERT, GL_INVERT, GL_INVERT);
+        ar_glEnable(GL_STENCIL_TEST);
+        ar_glClearStencil(0);
+        ar_glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+        ar_glStencilFunc(GL_NEVER, 0, 1);
+        ar_glStencilOp(GL_INVERT, GL_INVERT, GL_INVERT);
 
         draw(poly.data(), poly.size(), GL_TRIANGLE_FAN);
 
-        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-        glStencilFunc(GL_EQUAL, 1, 1);
-        glStencilOp(GL_ZERO, GL_ZERO, GL_ZERO);
+        ar_glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+        ar_glStencilFunc(GL_EQUAL, 1, 1);
+        ar_glStencilOp(GL_ZERO, GL_ZERO, GL_ZERO);
 
         float quad[4*2] = {
             0.0f, 0.0f,
@@ -551,9 +553,9 @@ void on_frame(void){
             (float)w, (float)h,
             0.0f, (float)h
         };
-        glColor3f(0, 1, 0);
+        ar_glColor3f(0, 1, 0);
         draw(quad, 4, GL_QUADS);
-        glDisable(GL_STENCIL_TEST);
+        ar_glDisable(GL_STENCIL_TEST);
     }
     */
 
@@ -641,10 +643,6 @@ void on_key_up(unsigned char key, int x, int y){
     window.is_key_down[key] = 0;
 }
 
-glad_func_ptr ar_get_proc_address(const char *name){
-    return (glad_func_ptr)wglGetProcAddress(name);
-}
-
 int main(int argc, char **argv){
     const char *vert_src = AR_STR(
         attribute vec4 apos;
@@ -698,16 +696,15 @@ int main(int argc, char **argv){
     glutInitWindowSize(window.width, window.height);
     glutCreateWindow("");
 
-    gladLoadGLES2Loader(ar_get_proc_address);
-
+    ar_gl_init();
 
     ar_shader_init(arc_shader, vert_src, frag_src);
 
-    umvp  = glGetUniformLocation(arc_shader->program, "umvp");
-    utex0 = glGetUniformLocation(arc_shader->program, "utex0");
-    apos  = glGetAttribLocation(arc_shader->program, "apos");
-    atex  = glGetAttribLocation(arc_shader->program, "atex");
-    acol  = glGetAttribLocation(arc_shader->program, "acol");
+    umvp  = ar_glGetUniformLocation(arc_shader->program, "umvp");
+    utex0 = ar_glGetUniformLocation(arc_shader->program, "utex0");
+    apos  = ar_glGetAttribLocation(arc_shader->program, "apos");
+    atex  = ar_glGetAttribLocation(arc_shader->program, "atex");
+    acol  = ar_glGetAttribLocation(arc_shader->program, "acol");
 
     assert(apos != -1);
     assert(atex != -1);

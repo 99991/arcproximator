@@ -7,12 +7,12 @@
 static int shader_compile_check(GLuint shader){
     char *log;
     GLint status;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+    ar_glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
     if (status == GL_FALSE) {
         GLint length = 0;
-        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
+        ar_glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
         log = (char*)malloc(length);
-        glGetShaderInfoLog(shader, length, &length, log);
+        ar_glGetShaderInfoLog(shader, length, &length, log);
         puts(log);
         free(log);
         return 0;
@@ -23,12 +23,12 @@ static int shader_compile_check(GLuint shader){
 static int shader_link_check(GLuint program){
     char *log;
     GLint status;
-    glGetProgramiv(program, GL_LINK_STATUS, &status);
+    ar_glGetProgramiv(program, GL_LINK_STATUS, &status);
     if (status == GL_FALSE) {
         GLint length = 0;
-        glGetProgramiv(program, GL_INFO_LOG_LENGTH, &length);
+        ar_glGetProgramiv(program, GL_INFO_LOG_LENGTH, &length);
         log = (char*)malloc(length);
-        glGetProgramInfoLog(program, length, &length, log);
+        ar_glGetProgramInfoLog(program, length, &length, log);
         puts(log);
         free(log);
         return 0;
@@ -37,10 +37,10 @@ static int shader_link_check(GLuint program){
 }
 
 static GLuint shader_compile(const char *source, GLenum type){
-    GLuint shader = glCreateShader(type);
+    GLuint shader = ar_glCreateShader(type);
     int length = (int)strlen(source);
-    glShaderSource(shader, 1, &source, &length);
-    glCompileShader(shader);
+    ar_glShaderSource(shader, 1, &source, &length);
+    ar_glCompileShader(shader);
     if(!shader_compile_check(shader)) exit(0);
     return shader;
 }
@@ -52,13 +52,13 @@ void ar_shader_init(
 ){
     shader->vertex_shader = shader_compile(vert_src, GL_VERTEX_SHADER);
     shader->fragment_shader = shader_compile(frag_src, GL_FRAGMENT_SHADER);
-    shader->program = glCreateProgram();
-    glAttachShader(shader->program, shader->vertex_shader);
-    glAttachShader(shader->program, shader->fragment_shader);
-    glLinkProgram(shader->program);
+    shader->program = ar_glCreateProgram();
+    ar_glAttachShader(shader->program, shader->vertex_shader);
+    ar_glAttachShader(shader->program, shader->fragment_shader);
+    ar_glLinkProgram(shader->program);
     if(!shader_link_check(shader->program)) exit(-1);
 }
 
 void ar_shader_use(struct ar_shader *shader){
-    glUseProgram(shader->program);
+    ar_glUseProgram(shader->program);
 }
