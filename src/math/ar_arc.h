@@ -12,10 +12,17 @@ enum ar_arc_type {
     AR_ARC_LINE,
 };
 
+/* TODO debug only */
+#include <stdint.h>
+#include "../graphics/ar_color.h"
+
 struct ar_arc {
     vec2 center, start, end;
     double radius;
     enum ar_arc_type arc_type;
+
+    /* TODO debug only */
+    uint32_t color;
 };
 
 void ar_arc_init(
@@ -31,5 +38,6 @@ void ar_arc_points(const struct ar_arc *arc, vec2 *points, int n, double t0, dou
 int ar_ccw_arc_encloses(const struct ar_arc *arc, vec2 p);
 int ar_arc_encloses(const struct ar_arc *arc, vec2 p);
 vec2 ar_arc_clamp(const struct ar_arc *arc, vec2 p);
+int ar_arc_is_over_180(const struct ar_arc *arc);
 
 #endif

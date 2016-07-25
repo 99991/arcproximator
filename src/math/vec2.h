@@ -28,5 +28,6 @@ double v2dist     (vec2 a, vec2 b);
 double v2angle    (vec2 a);
 int    v2isleft   (vec2 p, vec2 a, vec2 b);
 int    v2isright  (vec2 p, vec2 a, vec2 b);
+double v2dist_line(vec2 p, vec2 a, vec2 b);
 
 #endif

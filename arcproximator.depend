@@ -123,10 +123,11 @@
 1468261158 c:\users\john\desktop\arcproximator\src\graphics\ar_vertex.h
 	<stdint.h>
 
-1469123894 source:c:\users\john\desktop\arcproximator\src\graphics\ar_gl.c
+1469124164 source:c:\users\john\desktop\arcproximator\src\graphics\ar_gl.c
 	"ar_gl.h"
 	<GL/freeglut.h>
 	<stdio.h>
+	<assert.h>
 
 1469123699 source:c:\users\john\desktop\arcproximator\src\graphics\ar_shader.c
 	"ar_shader.h"
@@ -177,7 +178,7 @@
 	<X11/Xmd.h>
 	<GL/glew.h>
 
-1469123716 source:c:\users\john\desktop\arcproximator\src\main.c
+1469474332 source:c:\users\john\desktop\arcproximator\src\main.c
 	"math/ar_bezier3.h"
 	"math/ar_arc.h"
 	"graphics/ar_shader.h"
@@ -193,13 +194,14 @@
 	<GL/freeglut.h>
 	<math.h>
 	"math/ar_arc_list.h"
+	"draw.c"
 
 1468333818 urand_kerner_roots.h"
 
-1468264102 c:\users\john\desktop\arcproximator\src\graphics\ar_color.h
+1469465613 c:\users\john\desktop\arcproximator\src\graphics\ar_color.h
 	<stdint.h>
 
-1468587849 c:\users\john\desktop\arcproximator\src\math\vec2.h
+1469447077 c:\users\john\desktop\arcproximator\src\math\vec2.h
 	"../util/ar_util.h"
 
 1468329279 r_util.h"
@@ -223,13 +225,15 @@
 
 1468330743 3.h"
 
-1468962085 source:c:\users\john\desktop\arcproximator\src\math\ar_arc.c
+1469460131 source:c:\users\john\desktop\arcproximator\src\math\ar_arc.c
 	"ar_arc.h"
 
-1468958304 c:\users\john\desktop\arcproximator\src\math\ar_arc.h
+1469460258 c:\users\john\desktop\arcproximator\src\math\ar_arc.h
 	"vec2.h"
+	<stdint.h>
+	"../graphics/ar_color.h"
 
-1468597439 c:\users\john\desktop\arcproximator\src\util\ar_util.h
+1469466209 c:\users\john\desktop\arcproximator\src\util\ar_util.h
 
 1468333824 c:\users\john\desktop\arcproximator\src\math\ar_durand_kerner_roots.h
 	"vec2.h"
@@ -295,19 +299,19 @@
 1468589379 source:c:\users\john\desktop\arcproximator\src\math\mat4.c
 	"mat4.h"
 
-1468597449 source:c:\users\john\desktop\arcproximator\src\math\vec2.c
+1469447077 source:c:\users\john\desktop\arcproximator\src\math\vec2.c
 	"vec2.h"
 	<math.h>
 
-1468600544 source:c:\users\john\desktop\arcproximator\src\util\ar_util.c
+1469447077 source:c:\users\john\desktop\arcproximator\src\util\ar_util.c
 	"ar_util.h"
 	<stdio.h>
+	<stdlib.h>
 
-1468938738 source:c:\users\john\desktop\arcproximator\src\math\ar_polynomial.c
+1469380646 source:c:\users\john\desktop\arcproximator\src\math\ar_polynomial.c
 	"ar_polynomial.h"
-	<stdio.h>
 
-1468861145 c:\users\john\desktop\arcproximator\src\math\ar_polynomial.h
+1469379876 c:\users\john\desktop\arcproximator\src\math\ar_polynomial.h
 
 1469118910 source:c:\users\john\desktop\arcproximator\src\math\ar_arc_list.c
 	"ar_arc_list.h"
@@ -318,4 +322,6 @@
 	"ar_arc.h"
 
 1469118845 c:\users\john\desktop\arcproximator\src\util\ar_list.h
+
+1469138101 c:\users\john\desktop\arcproximator\src\draw.c
 

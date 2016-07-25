@@ -13,6 +13,8 @@ void ar_arc_init(
     arc->end = end;
     arc->radius = radius;
     arc->arc_type = arc_type;
+/* TODO debug only */
+    arc->color = AR_WHITE;
 }
 
 void ar_arc_points(const struct ar_arc *arc, vec2 *points, int n, double t0, double t1){
@@ -51,6 +53,10 @@ void ar_arc_points(const struct ar_arc *arc, vec2 *points, int n, double t0, dou
 
         points[i] = v2add(center, v2polar(angle, radius));
     }
+}
+
+int ar_arc_is_over_180(const struct ar_arc *arc){
+    return v2isright(arc->end, arc->center, arc->start) ^ arc->arc_type;
 }
 
 int ar_ccw_arc_encloses(const struct ar_arc *arc, vec2 p){

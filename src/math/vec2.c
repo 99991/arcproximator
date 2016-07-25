@@ -86,3 +86,10 @@ vec2 v2normalize(vec2 a){
 vec2 v2lerp(vec2 a, vec2 b, double u){
     return v2add(v2smul(1.0 - u, a), v2smul(u, b));
 }
+
+double v2dist_line(vec2 p, vec2 a, vec2 b){
+    vec2 ba = v2sub(b, a);
+    double u = v2dot(v2sub(p, a), ba)/v2dot(ba, ba);
+    vec2 q = v2lerp(a, b, u);
+    return v2dist(p, q);
+}

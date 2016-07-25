@@ -48,10 +48,6 @@
 			<Add option="-Wpointer-arith" />
 			<Add option="-Wcast-qual" />
 		</Compiler>
-		<Unit filename="src/glad/glad.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/glad/glad.h" />
 		<Unit filename="src/graphics/ar_color.h" />
 		<Unit filename="src/graphics/ar_draw.c">
 			<Option compilerVar="CC" />
@@ -77,6 +73,10 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/math/ar_arc.h" />
+		<Unit filename="src/math/ar_arc_list.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/math/ar_arc_list.h" />
 		<Unit filename="src/math/ar_bezier3.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -101,6 +101,7 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/math/vec2.h" />
+		<Unit filename="src/util/ar_list.h" />
 		<Unit filename="src/util/ar_util.c">
 			<Option compilerVar="CC" />
 		</Unit>

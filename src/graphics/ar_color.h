@@ -14,5 +14,7 @@
 #define AR_BLUE       0xffff0000
 #define AR_WHITE      0xffffffff
 #define AR_BLACK      0xff000000
+#define AR_ORANGE     0xff00a5ff
+#define AR_GRAY       0xff808080
 
 #endif
