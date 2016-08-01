@@ -2,6 +2,10 @@
 #define AR_COLOR_INCLUDED
 
 #include <stdint.h>
+#include <stddef.h>
+
+uint32_t ar_color_from_hex(const char *hex);
+uint32_t ar_color_from_hex_n(const char *hex, size_t n);
 
 #define AR_RGBA(r, g, b, a) (((uint32_t)a << 24) | ((uint32_t)b << 16) | ((uint32_t)g << 8) | (uint32_t)r)
 #define AR_RGB(r, g, b) AR_RGBA(r, g, b, 0xff)

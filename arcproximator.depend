@@ -178,7 +178,7 @@
 	<X11/Xmd.h>
 	<GL/glew.h>
 
-1470075487 source:c:\users\john\desktop\arcproximator\src\main.c
+1470077515 source:c:\users\john\desktop\arcproximator\src\main.c
 	"math/ar_bezier3.h"
 	"math/ar_arc.h"
 	"graphics/ar_shader.h"
@@ -194,13 +194,14 @@
 	<GL/freeglut.h>
 	<math.h>
 	"math/ar_arc_list.h"
-	"svg.c"
-	"draw.c"
+	"svg.h"
+	"draw.h"
 
 1468333818 urand_kerner_roots.h"
 
-1469465613 c:\users\john\desktop\arcproximator\src\graphics\ar_color.h
+1470078658 c:\users\john\desktop\arcproximator\src\graphics\ar_color.h
 	<stdint.h>
+	<stddef.h>
 
 1469447077 c:\users\john\desktop\arcproximator\src\math\vec2.h
 	"../util/ar_util.h"
@@ -234,7 +235,7 @@
 	<stdint.h>
 	"../graphics/ar_color.h"
 
-1470075643 c:\users\john\desktop\arcproximator\src\util\ar_util.h
+1470078652 c:\users\john\desktop\arcproximator\src\util\ar_util.h
 	<stddef.h>
 
 1468333824 c:\users\john\desktop\arcproximator\src\math\ar_durand_kerner_roots.h
@@ -334,4 +335,13 @@
 	<string.h>
 	<assert.h>
 	<stdint.h>
+
+1470076518 c:\users\john\desktop\arcproximator\src\svg.h
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<assert.h>
+	<stdint.h>
+
+1469138101 c:\users\john\desktop\arcproximator\src\draw.h
 

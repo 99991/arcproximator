@@ -101,6 +101,7 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/math/vec2.h" />
+		<Unit filename="src/svg.h" />
 		<Unit filename="src/util/ar_list.h" />
 		<Unit filename="src/util/ar_util.c">
 			<Option compilerVar="CC" />

@@ -19,6 +19,7 @@ int ar_is_good_double(double x);
 void ar_print_bad_double(double x, int line, const char *path);
 double ar_clamp(double x, double a, double b);
 void* ar_load_file(const char *path, size_t *n_bytes);
+int ar_ord(char c);
 
 #define AR_ASSERT_GOOD_NUMBER(x) do { if (!ar_is_good_double(x)) ar_print_bad_double(x, __LINE__, __FILE__); }while(0)
 
