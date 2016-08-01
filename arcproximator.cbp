@@ -48,6 +48,9 @@
 			<Add option="-Wpointer-arith" />
 			<Add option="-Wcast-qual" />
 		</Compiler>
+		<Unit filename="src/graphics/ar_color.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="src/graphics/ar_color.h" />
 		<Unit filename="src/graphics/ar_draw.c">
 			<Option compilerVar="CC" />
