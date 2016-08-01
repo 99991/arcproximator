@@ -670,24 +670,24 @@ void ar_bezier3_fit_with_arcs(const struct ar_bezier3 *curve, struct ar_arc_list
 
 struct ar_arc_list output_arcs[1];
 
-void drawLine(double ax, double ay, double bx, double by){
+void draw_line(double ax, double ay, double bx, double by){
     struct ar_arc arc[1];
     ar_arc_init(arc, v2(0.0, 0.0), 0.0, v2(ax, ay), v2(bx, by), AR_ARC_LINE);
     ar_arc_list_add_tail(output_arcs, arc[0]);
 }
 
-void drawCubic(double x0, double y0, double x1, double y1, double x2, double y2, double x3, double y3){
+void draw_cubic(double x0, double y0, double x1, double y1, double x2, double y2, double x3, double y3){
     struct ar_bezier3 curve[1];
     ar_bezier3_init(curve, v2(x0, y0), v2(x1, y1), v2(x2, y2), v2(x3, y3));
     ar_bezier3_fit_with_arcs(curve, output_arcs);
 }
 
-void drawQuadratic(double x0, double y0, double x1, double y1, double x2, double y2){
+void draw_quadratic(double x0, double y0, double x1, double y1, double x2, double y2){
     double bx = x0 + 2.0/3.0 * (x1 - x0);
     double by = y0 + 2.0/3.0 * (y1 - y0);
     double cx = x2 + 2.0/3.0 * (x1 - x2);
     double cy = y2 + 2.0/3.0 * (y1 - y2);
-    drawCubic(x0, y0, bx, by, cx, cy, x2, y2);
+    draw_cubic(x0, y0, bx, by, cx, cy, x2, y2);
 }
 
 void ar_arc_vertices(const struct ar_arc *arc, struct ar_vertex *vertices, uint32_t color){
@@ -714,6 +714,8 @@ void ar_arc_vertices(const struct ar_arc *arc, struct ar_vertex *vertices, uint3
     vertices[4] = vertices[1];
     vertices[5] = ar_vert(q.x, q.y, b_uv.x*scale, b_uv.y*scale, color);
 }
+
+#include "svg.h"
 
 void on_frame(void){
     mat4 projection = m4_ortho2d(0.0f, window.width, window.height, 0.0f);
@@ -749,7 +751,10 @@ void on_frame(void){
     ar_fit(curve, 0.1, 16, output_arcs);
 #else
     /* fit multiple curves */
-#include "draw.c"
+/*
+#include "draw.h"
+*/
+    svg_parse_file("images/at_paragraph_snowman_thunder_cloud.svg");
 #endif
 
     int n_arcs = output_arcs->n;
@@ -787,6 +792,7 @@ void on_frame(void){
     ar_glStencilOp(GL_INVERT, GL_INVERT, GL_INVERT);
 
     /* draw triangles */
+    upload_model_view_projection(mvp);
     ar_draw(vertices, vertex_pointer - vertices, GL_TRIANGLES, apos, atex, acol);
 
     /* prepare coloring stencil buffer */
@@ -796,11 +802,13 @@ void on_frame(void){
 
 #if 0
     /* draw triangles again */
+    upload_model_view_projection(mvp);
     ar_draw(vertices, vertex_pointer - vertices, GL_TRIANGLES, apos, atex, acol);
 #else
     /* draw screen-filling rectangle */
     struct ar_vertex rect_vertices[2*3];
     ar_make_rect(rect_vertices, 0.0f, 0.0f, window.width, window.height, 0.0f, 0.0f, 0.0f, 0.0f, AR_GRAY);
+    upload_model_view_projection(projection);
     ar_draw(rect_vertices, 2*3, GL_TRIANGLE_FAN, apos, atex, acol);
 #endif
     ar_glDisable(GL_STENCIL_TEST);
@@ -817,6 +825,7 @@ void on_frame(void){
         *vertex_pointer++ = ar_vert(a.x, a.y, 0.0f, 0.0f, AR_GREEN);
         *vertex_pointer++ = ar_vert(b.x, b.y, 0.0f, 0.0f, AR_GREEN);
     }
+    upload_model_view_projection(mvp);
     ar_draw(vertices, n_arcs*2, GL_LINES, apos, atex, acol);
 #endif
 

@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 int ar_is_good_double(double x){
     return
@@ -19,4 +20,17 @@ double ar_clamp(double x, double a, double b){
     if (x < a) return a;
     if (x > b) return b;
     return x;
+}
+
+void* ar_load_file(const char *path, size_t *n_bytes){
+    FILE *fp = fopen(path, "rb");
+    if (!fp) return NULL;
+    fseek(fp, 0, SEEK_END);
+    size_t n = ftell(fp);
+    rewind(fp);
+    void *bytes = malloc(n);
+    fread(bytes, 1, n, fp);
+    fclose(fp);
+    if (n_bytes) *n_bytes = n;
+    return bytes;
 }
