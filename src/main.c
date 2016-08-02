@@ -71,7 +71,7 @@ void upload_model_view_projection(mat4 mvp){
             data[i + j*4] = m4at(mvp, i, j);
         }
     }
-    ar_glUniformMatrix4fv(umvp, 1, 0, data);
+    glUniformMatrix4fv(umvp, 1, 0, data);
 }
 
 void ar_draw_points(const vec2 *points, int n, uint32_t color, GLenum mode){
@@ -723,23 +723,23 @@ void on_frame(void){
     mat4 modelview = m4m23(world_to_screen);
     mat4 mvp = m4mul(projection, modelview);
 
-    AR_GL_CHECK
-    ar_glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    ar_glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-    AR_GL_CHECK
+    gl_CHECK
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    gl_CHECK
 
     window.width = glutGet(GLUT_WINDOW_WIDTH);
     window.height = glutGet(GLUT_WINDOW_HEIGHT);
 
     ar_shader_use(arc_shader);
-    AR_GL_CHECK
+    gl_CHECK
 
     upload_model_view_projection(mvp);
-    AR_GL_CHECK
+    gl_CHECK
 
-    ar_glActiveTexture(GL_TEXTURE0);
+    glActiveTexture(GL_TEXTURE0);
     ar_texture_bind(texture);
-    ar_glUniform1i(utex0, 0);
+    glUniform1i(utex0, 0);
 
     ar_arc_list_init(output_arcs);
 
@@ -785,20 +785,20 @@ void on_frame(void){
     }
 
     /* prepare writing to stencil buffer */
-    ar_glEnable(GL_STENCIL_TEST);
-    ar_glClearStencil(0);
-    ar_glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-    ar_glStencilFunc(GL_NEVER, 0, 1);
-    ar_glStencilOp(GL_INVERT, GL_INVERT, GL_INVERT);
+    glEnable(GL_STENCIL_TEST);
+    glClearStencil(0);
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    glStencilFunc(GL_NEVER, 0, 1);
+    glStencilOp(GL_INVERT, GL_INVERT, GL_INVERT);
 
     /* draw triangles */
     upload_model_view_projection(mvp);
     ar_draw(vertices, vertex_pointer - vertices, GL_TRIANGLES, apos, atex, acol);
 
     /* prepare coloring stencil buffer */
-    ar_glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-    ar_glStencilFunc(GL_EQUAL, 1, 1);
-    ar_glStencilOp(GL_ZERO, GL_ZERO, GL_ZERO);
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glStencilFunc(GL_EQUAL, 1, 1);
+    glStencilOp(GL_ZERO, GL_ZERO, GL_ZERO);
 
 #if 0
     /* draw triangles again */
@@ -811,7 +811,7 @@ void on_frame(void){
     upload_model_view_projection(projection);
     ar_draw(rect_vertices, 2*3, GL_TRIANGLE_FAN, apos, atex, acol);
 #endif
-    ar_glDisable(GL_STENCIL_TEST);
+    glDisable(GL_STENCIL_TEST);
 
 #if 1
     /* draw polygon lines */
@@ -939,8 +939,6 @@ int main(int argc, char **argv){
     const char *frag_src =
         "#version 120\r\n"
         AR_STR(
-        precision highp float;
-
         varying vec2 vtex;
         varying vec4 vcol;
 
@@ -977,15 +975,15 @@ int main(int argc, char **argv){
     glutInitWindowSize(window.width, window.height);
     glutCreateWindow("");
 
-    ar_gl_init();
+    glewInit();
 
     ar_shader_init(arc_shader, vert_src, frag_src);
 
-    umvp  = ar_glGetUniformLocation(arc_shader->program, "umvp");
-    utex0 = ar_glGetUniformLocation(arc_shader->program, "utex0");
-    apos  = ar_glGetAttribLocation(arc_shader->program, "apos");
-    atex  = ar_glGetAttribLocation(arc_shader->program, "atex");
-    acol  = ar_glGetAttribLocation(arc_shader->program, "acol");
+    umvp  = glGetUniformLocation(arc_shader->program, "umvp");
+    utex0 = glGetUniformLocation(arc_shader->program, "utex0");
+    apos  = glGetAttribLocation(arc_shader->program, "apos");
+    atex  = glGetAttribLocation(arc_shader->program, "atex");
+    acol  = glGetAttribLocation(arc_shader->program, "acol");
 
     assert(apos != -1);
     assert(atex != -1);
