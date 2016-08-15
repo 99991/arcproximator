@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title></title>
+</head>
+<body>
+<canvas id="canvas" width="512" height="512" style="margin:0; padding: 0; top:0; left:0; position:absolute;"></canvas>
+<script src="util.js"></script>
+<script src="vector.js"></script>
+<script src="draw.js"></script>
+<script src="intersection.js"></script>
+<script src="arc.js"></script>
+<script src="segment.js"></script>
+<script src="triangle.js"></script>
+<script>
+
+function splitArcAtPoints(arc, points){
+	var center = arc.center
+	var ccw = arc.counterclockwise
+	var aAngle = diamondAngle(sub(arc.a, center))
+	
+	sortByKey(points, function(p){
+		var angle = diamondAngle(sub(p, center))
+		if (angle < aAngle) angle += 4
+		if (!ccw) angle = -angle
+		return angle
+	})
+	
+	var arcs = []
+	var a = arc.a
+	for (var i = 0; i < points.length; i++){
+		var b = points[i]
+		arcs.push(new Arc(center, arc.radius, a, b, ccw))
+		a = b
+	}
+	arcs.push(new Arc(center, arc.radius, a, arc.b, ccw))
+	return arcs
+}
+
+function splitSegmentAtPoints(segment, points){
+	var a = segment.a
+	var b = segment.b
+	
+	sortByKey(points, function(p){
+		return dot(sub(p, a), sub(b, a))
+	})
+	
+	var segments = []
+	for (var i = 0; i < points.length; i++){
+		var b = points[i]
+		segments.push(new Segment(a, b))
+		a = b
+	}
+	segments.push(new Segment(a, segment.b))
+	return segments
+}
+
+function splitLongArcs(curves){
+	var newCurves = []
+	var n = curves.length
+	for (var i = 0; i < n; i++){
+		var curve = curves[i]
+		if (curve.constructor == Arc){
+			var arc = curve
+			var center = arc.center
+			var radius = arc.radius
+			var counterclockwise = arc.counterclockwise
+			
+			if (arc.isOver180()){
+				// split into 4 parts
+				var arcs = arc.split(arc.middle())
+				append(newCurves, arcs[0].split(arcs[0].middle()))
+				append(newCurves, arcs[1].split(arcs[1].middle()))
+			}else if (arc.isOver90AndLessThan270()){
+				// split into 2 parts
+				append(newCurves, arc.split(arc.middle()))
+			}else{
+				// don't split
+				newCurves.push(arc)
+			}
+		}else{
+			newCurves.push(curve)
+		}
+	}
+	return newCurves
+}
+
+function splitIntersectingArcs(curves){
+	var maxIterations = 5
+	for (var iteration = 0; iteration < maxIterations; iteration++){
+		var n = curves.length
+		var marked = new Array(n)
+		for (var i = 0; i < n; i++) marked[i] = false
+		
+		// mark curves for splitting
+		for (var i = 0; i < n; i++){
+			var curve0 = curves[i]
+			if (curve0.constructor == Arc){
+				var a = curve0.a
+				var b = curve0.b
+				var hull = curve0.getHull()
+				
+				context.strokeStyle = "gray"
+				drawPolygon([hull.a, hull.b, hull.c])
+				
+				// TODO mark curves which have a hull that contains points
+				jLoop: 
+				for (var j = 0; j < n; j++){
+					if (i == j) continue
+					var curve1 = curves[j]
+					var intersections;
+					switch (curve1.constructor){
+						case Arc:
+							intersections = hull.intersectionsTriangle(curve1.getHull())
+						break
+						case Segment:
+							intersections = hull.intersectionsSegment(curve1)
+						break
+					}
+					for (var k = 0; k < intersections.length; k++){
+						var p = intersections[k]
+						if (almostEqualPoints(p, a) || almostEqualPoints(p, b)) continue
+						marked[i] = true
+						if (curve1.constructor == Arc){
+							marked[j] = true
+						}
+						drawCircle(p, 10)
+						break jLoop
+					}
+				}
+			}
+		}
+		
+		var nMarks = 0
+		for (var i = 0; i < n; i++) nMarks += marked[i]
+		if (nMarks && iteration == maxIterations - 1){
+			console.log("WARNING: max iterations reached")
+		}
+		
+		var newCurves = []
+		for (var i = 0; i < n; i++){
+			var curve = curves[i]
+			if (marked[i]){
+				append(newCurves, curve.split(curve.middle()))
+			}else{
+				newCurves.push(curve)
+			}
+		}
+		curves = newCurves
+	}
+	
+	return curves
+}
+/*
+
+function subdivide(arc, a, b, depth){
+	if (depth == 0){
+		console.log("WARNING: max depth reached")
+	}else{
+		var p = arcTrianglePoint(arc)
+		
+		var radius = arc.radius
+		var center = arc.center
+		var s0 = intersectionSegmentSegment(a, b, p, arc.a)
+		var s1 = intersectionSegmentSegment(a, b, p, arc.b)
+		if (
+			(s0 && !almostEqual(dist(s0, center), radius)) ||
+			(s1 && !almostEqual(dist(s1, center), radius))
+		){
+			var v0 = sub(arc.a, center)
+			var v1 = sub(arc.b, center)
+			var splitPoint = add(center, scale(add(v0, v1), radius))
+			var arc0 = new Arc(center, radius, arc.a, splitPoint, arc.counterclockwise)
+			var arc1 = new Arc(center, radius, splitPoint, arc.b, arc.counterclockwise)
+			subdivide(arc0, a, b, depth - 1)
+			subdivide(arc1, a, b, depth - 1)
+		}else{
+			context.strokeStyle = "orange"
+			strokeLine(p, arc.a)
+			strokeLine(p, arc.b)
+			strokeLine(arc.a, arc.b)
+		}
+	}
+}
+*/
+function splitAtIntersections(curves){
+	var n = curves.length
+	
+	var splitPoints = new Array(n)
+	for (var i = 0; i < n; i++) splitPoints[i] = []
+	
+	var count = 0
+	for (var i = 0; i < n; i++){
+		var curve0 = curves[i]
+		for (var j = i + 1; j < n; j++){
+			var curve1 = curves[j]
+			
+			var intersections;
+			
+			if (curve0.constructor == Arc && curve1.constructor == Arc){
+				intersections = intersectionsArcArc(curve0, curve1)
+			}
+			if (curve0.constructor == Arc && curve1.constructor == Segment){
+				intersections = intersectionsArcSegment(curve0, curve1)
+			}
+			if (curve0.constructor == Segment && curve1.constructor == Arc){
+				intersections = intersectionsArcSegment(curve1, curve0)
+			}
+			if (curve0.constructor == Segment && curve1.constructor == Segment){
+				intersections = intersectionsSegmentSegment(curve1, curve0)
+			}
+			
+			append(splitPoints[i], intersections)
+			append(splitPoints[j], intersections)
+		}
+	}
+	
+	context.strokeStyle = "black"
+			
+	var newCurves = []
+	for (var i = 0; i < n; i++){
+		var curve = curves[i]
+		var points = splitPoints[i]
+		switch (curve.constructor){
+			case Arc:
+				append(newCurves, splitArcAtPoints(curve, points))
+			break
+			case Segment:
+				append(newCurves, splitSegmentAtPoints(curve, points))
+			break
+		}
+		
+		for (var j = 0; j < points.length; j++){
+			var p = points[j]
+			drawCircle(p, 5)
+		}
+	}
+	return newCurves
+}
+
+function redraw(){
+	context.clearRect(0, 0, canvas.width, canvas.height)
+	// y-axis should be up, not down
+	context.setTransform(1, 0, 0, -1, 0, canvas.height)
+	
+	if (1){
+		var curves = [
+			new Arc(mouse, 100, 0.5, 1.5),
+			new Arc([256, 256], 150, -0.3, -0.9, true),
+			new Arc([300, 400], 125, -0.3, -1.9),
+			new Segment([100, 350], [450, 300]),
+			new Segment([150, 50], [450, 500]),
+		]
+		
+		curves = splitAtIntersections(curves)
+		curves = splitLongArcs(curves)
+		curves = splitIntersectingArcs(curves)
+		
+		for (var i = 0; i < curves.length; i++){
+			context.strokeStyle = colors[i % colors.length]
+			var curve = curves[i]
+			curve.draw()
+			var middle = curve.middle()
+			write(i, middle)
+		}
+	}
+	
+	if (0){
+		// test isInFrontOf
+		var a = mouse
+		var b = [256, 256]
+		var r = 5
+		for (var x = 0; x < canvas.width; x += 2*r){
+			for (var y = 0; y < canvas.height; y+= 2*r){
+				var p = [x, y]
+				if (isInFrontOf(p, a, b)){
+					fillCircle(p, r)
+				}
+			}
+		}
+	}
+	
+	if (0){
+		// arc vs segment
+		var arc = makeArc(mouse, 100, 0.2, 2.5, true)
+		
+		var a = [100, 300]
+		var b = [450, 200]
+		
+		var intersections = intersectionsArcSegment(arc, a, b)
+		context.strokeStyle = "black"
+		for (var i = 0; i < intersections.length; i++){
+			fillCircle(intersections[i], 5)
+		}
+		arc.stroke()
+		strokeLine(a, b)
+		
+		subdivide(arc, a, b, 5)
+	}
+	
+	if (0){
+		// intersect multiple arcs
+		var arc0 = makeArc(mouse, 100, 0.5, 1.5)
+		var arc1 = makeArc([256, 256], 150, -0.3, -0.9, true)
+		var arc2 = makeArc([300, 400], 125, -0.3, -1.9)
+		var arcs = [arc0, arc1, arc2]
+		arcs = intersectArcs(arcs)
+		for (var i = 0; i < arcs.length; i++){
+			var arc = arcs[i]
+			context.strokeStyle = colors[i % colors.length]
+			arc.stroke()
+		}
+	}
+}
+
+function resize(){
+	canvas.width = window.innerWidth
+	canvas.height = window.innerHeight
+	redraw()
+}
+
+resize()
+
+window.onresize = resize
+
+window.onmousemove = function(e){
+	var x = e.clientX
+	var y = canvas.height - e.clientY - 1
+	mouse = [x, y]
+	redraw()
+}
+
+</script>
+</body>
+</html>

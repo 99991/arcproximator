@@ -11,53 +11,44 @@ var canvas = document.getElementById("canvas");
 var context = canvas.getContext("2d");
 
 function drawLine(line){
-	var a = line[0];
-	var b = line[1];
-	context.beginPath();
-	context.moveTo(a[0], a[1]);
-	context.lineTo(b[0], b[1]);
-	context.stroke();
+	var a = line[0]
+	var b = line[1]
+	context.beginPath()
+	context.moveTo(a[0], a[1])
+	context.lineTo(b[0], b[1])
+	context.stroke()
 }
 
 function makePairs(values){
-	var n = values.length;
-	var a = values[n-1];
-	var results = new Array(n);
+	var n = values.length
+	var a = values[n-1]
+	var results = new Array(n)
 	for (var i = 0; i < n; i++){
-		var b = values[i];
-		results[i] = [a, b];
-		a = b;
+		var b = values[i]
+		results[i] = [a, b]
+		a = b
 	}
-	return results;
-}
-
-function map(f, values){
-	var n = values.length;
-	var results = new Array(n);
-	for (var i = 0; i < n; i++){
-		results[i] = f(values[i]);
-	}
-	return results;
+	return results
 }
 
 function swap(values, i, j){
-	var temp = values[i];
-	values[i] = values[j];
-	values[j] = temp;
+	var temp = values[i]
+	values[i] = values[j]
+	values[j] = temp
 }
 
 function numberIsLess(a, b){
-	return a < b;
+	return a < b
 }
 
 function insertSorted(values, value, isLess){
-	if (isLess === undefined) isLess = numberIsLess;
+	values.push(value)
 	
-	values.push(value);
-	
-	for (var i = values.length - 1; i > 0 && isLess(values[i], values[i-1]); i--){
-		swap(values, i, i-1);
+	var i;
+	for (i = values.length - 1; i > 0 && isLess(values[i], values[i-1]); i--){
+		swap(values, i, i-1)
 	}
+	return i-1;
 }
 
 function comparePoints(a, b){
@@ -72,19 +63,62 @@ function comparePoints(a, b){
 
 var points = [
 	[100, 100],
-	[200, 100],
+	[200, 50],
 	[300, 400],
-	[500, 300],
-];
+	[500, 300 + Math.random()*10],
+]
 
-var lines = makePairs(points);
+var lines = makePairs(points)
 
-map(drawLine, lines);
+lines.forEach(drawLine)
 
-map(function(line){
-	line[0].push(line);
-	line[1].push(line);
-}, lines);
+var orderedLines = []
+var nextPoint = []
+
+lines.forEach(function(line){
+	var a = line[0]
+	var b = line[1]
+	line.sort(comparePoints)
+	a.push(line)
+	b.push(line)
+	nextPoint.push(a)
+	nextPoint.push(b)
+})
+
+nextPoint.sort(comparePoints)
+
+nextPoint.forEach(function(p){
+	context.fillText(p[0] + "/" + p[1], p[0], p[1])
+})
+
+var xPoint = Number.NEGATIVE_INFINITY
+
+function yLine(line){
+	var a = line[0]
+	var b = line[1]
+	var slope = (b[1] - a[1])/(b[0] - a[0])
+	var yIntercept = a[1] - slope*a[0]
+	return yIntercept + slope*xPoint
+}
+
+function lineIsLess(ab, cd){
+	return yLine(ab) < yLine(cd)
+}
+
+var kMax = 10;
+for (var k = 0; k < kMax; k++){
+	if (nextPoint.length == 0) break;
+	
+	// remove first point
+	var point = nextPoint[0]
+	for (var i = 1; i < nextPoint.length; i++) nextPoint[i-1] = nextPoint[i]
+	nextPoint.pop()
+	
+	var index = insertSorted(orderedLines, point[2], lineIsLess)
+	console.log("index:", index)
+	
+	if (k + 1 === kMax) console.log("WARNING: max iterations reached");
+}
 
 </script>
 </body>
