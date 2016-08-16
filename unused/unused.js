@@ -264,3 +264,51 @@ if (0){
 	
 	arc.stroke()
 }
+
+	
+if (0){
+	// test isInFrontOf
+	var a = mouse
+	var b = [256, 256]
+	var r = 5
+	for (var x = 0; x < canvas.width; x += 2*r){
+		for (var y = 0; y < canvas.height; y+= 2*r){
+			var p = [x, y]
+			if (isInFrontOf(p, a, b)){
+				fillCircle(p, r)
+			}
+		}
+	}
+}
+
+if (0){
+	// arc vs segment
+	var arc = makeArc(mouse, 100, 0.2, 2.5, true)
+	
+	var a = [100, 300]
+	var b = [450, 200]
+	
+	var intersections = intersectionsArcSegment(arc, a, b)
+	context.strokeStyle = "black"
+	for (var i = 0; i < intersections.length; i++){
+		fillCircle(intersections[i], 5)
+	}
+	arc.stroke()
+	strokeLine(a, b)
+	
+	subdivide(arc, a, b, 5)
+}
+
+if (0){
+	// intersect multiple arcs
+	var arc0 = makeArc(mouse, 100, 0.5, 1.5)
+	var arc1 = makeArc([256, 256], 150, -0.3, -0.9, true)
+	var arc2 = makeArc([300, 400], 125, -0.3, -1.9)
+	var arcs = [arc0, arc1, arc2]
+	arcs = intersectArcs(arcs)
+	for (var i = 0; i < arcs.length; i++){
+		var arc = arcs[i]
+		context.strokeStyle = colors[i % colors.length]
+		arc.stroke()
+	}
+}
