@@ -32,9 +32,9 @@ function makeNewCurves(){
 	var a = a0
 	var n = 10
 	for (var i = 0; i < n; i++){
-		var padding = 100
-		var x = padding + Math.random()*(nx - padding*2)|0
-		var y = padding + Math.random()*(ny - padding*2)|0
+		var padding = 150
+		var x = padding + Math.random()*(nx - padding*2)
+		var y = padding + Math.random()*(ny - padding*2)
 		var b = [x, y]
 		
 		if (i == n - 1) b = a0
@@ -43,9 +43,9 @@ function makeNewCurves(){
 			var center = lerp(a, b, 0.5)
 			var radius = dist(a, b)*0.5
 			/*
-			var err = 10
+			var err = 1
 			center = add(center, [Math.random()*2*err - err, Math.random()*2*err - err])
-			radius += Math.random()*err + 10
+			radius += Math.random()*err*2// - err
 			*/
 			curves.push(new Arc(center, radius, a, b, Math.random() > 0.5))
 		}else{
@@ -59,7 +59,6 @@ function makeNewCurves(){
 makeNewCurves()
 
 function countArcIntersections(x, y, arc){
-	var p = [x, y]
 	var clockwise = !arc.counterclockwise
 	var a = arc.a
 	var b = arc.b
@@ -88,13 +87,19 @@ function countArcIntersections(x, y, arc){
 	// if ray does not intersect bounding box
 	if (y < bottom || y > top || x > right) return 0
 	
-	var outside = dist2(p, center) >= radius*radius
+	var outside = dist2([x, y], center) > radius*radius
 	
 	// if ray does not intersect circle
 	if (outside && x > cx) return 0
 	
+	if (ay == by){
+		// TODO
+	}
+	
 	if (ay < by){
 		// 'b' above 'a'
+		
+		// TODO ax == cx or ay == cy
 		
 		if (ax <= cx && bx <= cx){
 			if ((y < ay || y >= by) && outside) return 2
@@ -117,6 +122,8 @@ function countArcIntersections(x, y, arc){
 		}
 	}else{
 		// 'a' above 'b'
+		
+		// TODO ax == cx or bx == cx
 		
 		if (ax <= cx && bx <= cx){
 			if (by <= y && y < ay && outside) return 1
@@ -177,7 +184,18 @@ function isInGeneralPolygon(x, y, curves){
 			break
 		}
 	}
+	//console.log(nIntersections, "intersections")
+	
 	return nIntersections & 1 == 1
+}
+
+function isEdgeCase(curves){
+	for (var y = 0; y < ny; y++){
+		if (isInGeneralPolygon(-1000, y, curves)){
+			return true
+		}
+	}
+	return false
 }
 
 function redraw(){
@@ -187,6 +205,36 @@ function redraw(){
 	context.lineWidth = 2
 		
 	if (1){
+		/*
+		var center = [200, 200]
+		var radius = 50
+		var a = add(center, [radius, 0])
+		var b = add(center, [0, radius])
+		var arc = new Arc(center, radius, a, b, true)
+		
+		context.font = "50px Arial"
+		context.strokeWidth = 2
+		context.fillStyle = "black"
+		context.strokeStyle = "white"
+		if (arc.counterclockwise){
+			writeOutlined(context, "a", a)
+			writeOutlined(context, "b", b)
+		}else{
+			writeOutlined(context, "a", b)
+			writeOutlined(context, "b", a)
+		}
+		
+		context.strokeStyle = "black"
+		arc.draw(context)
+		
+		console.log(countArcIntersections(a[0], a[1], arc))
+		*/
+		
+		for (var i = 0; i < 1000; i++){
+			if (isEdgeCase(curves)) break
+			makeNewCurves()
+		}
+		
 		var i = 0
 		for (var y = 0; y < ny; y++){
 			for (var x = 0; x < nx; x++){
@@ -211,6 +259,7 @@ function redraw(){
 			context.strokeStyle = colors[i % colors.length]
 			curves[i].draw(context)
 		}
+		
 	}
 }
 
