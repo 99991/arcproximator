@@ -15,7 +15,7 @@ Segment.prototype.middle = function(u){
 	return smul(0.5, add(this.a, this.b))
 }
 
-Segment.prototype.draw = function(fill){
+Segment.prototype.draw = function(context, fill){
 	var a = this.a
 	var b = this.b
 	context.beginPath()

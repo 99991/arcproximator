@@ -7,7 +7,7 @@
 <body>
 <!--  style="margin:0; padding: 0; top:0; left:0; position:absolute;" -->
 <canvas id="canvas" width="512" height="512"></canvas>
-<canvas id="canvas2" width="128" height="128"></canvas>
+<canvas id="canvas2" width="256" height="256"></canvas>
 <script src="util.js"></script>
 <script src="vector.js"></script>
 <script src="draw.js"></script>
@@ -18,22 +18,45 @@
 <script src="split.js"></script>
 <script>
 
-var canvas2 = document.getElementById("canvas")
-var context2 = canvas2.getContext("2d");
-
 var nx = canvas.width
 var ny = canvas.height
 var imageData = context.createImageData(nx, ny)
 var abgr = imageData.data
 
-var nx2 = canvas2.width
-var ny2 = canvas2.height
-var imageData2 = context2.createImageData(nx2, ny2)
-var abgr2 = imageData2.data
+var curves = []
 
-var arcIsCCW = true
-var a = [1337, 666]
-var b = [666, 1234]
+function makeNewCurves(){
+	curves = []
+	
+	var a0 = [100, 100]
+	var a = a0
+	var n = 10
+	for (var i = 0; i < n; i++){
+		var padding = 100
+		var x = padding + Math.random()*(nx - padding*2)|0
+		var y = padding + Math.random()*(ny - padding*2)|0
+		var b = [x, y]
+		
+		if (i == n - 1) b = a0
+		
+		if (Math.random() < 0.75){
+			var center = lerp(a, b, 0.5)
+			var radius = dist(a, b)*0.5
+			/*
+			var err = 10
+			center = add(center, [Math.random()*2*err - err, Math.random()*2*err - err])
+			radius += Math.random()*err + 10
+			*/
+			curves.push(new Arc(center, radius, a, b, Math.random() > 0.5))
+		}else{
+			curves.push(new Segment(a, b))
+		}
+		
+		a = b
+	}
+}
+
+makeNewCurves()
 
 function countArcIntersections(x, y, arc){
 	var p = [x, y]
@@ -58,102 +81,103 @@ function countArcIntersections(x, y, arc){
 	var cy = center[1]
 	
 	// bounding box of circle
-	var left = cx - radius
 	var right = cx + radius
 	var bottom = cy - radius
 	var top = cy + radius
 	
 	// if ray does not intersect bounding box
-	if (y <= bottom || y >= top || x > right) return 0
+	if (y < bottom || y > top || x > right) return 0
 	
 	var outside = dist2(p, center) >= radius*radius
 	
 	// if ray does not intersect circle
 	if (outside && x > cx) return 0
 	
-	var below = y <  Math.min(ay, by)
-	var above = y > Math.max(ay, by)
-	var between = !below && !above
-	
 	if (ay < by){
 		// 'b' above 'a'
 		
 		if (ax <= cx && bx <= cx){
-			return (!between && outside) ? 2 : 1
+			if ((y < ay || y >= by) && outside) return 2
+			return 1
 		}
-		if (ax > cx && bx > cx) return between ? 1 : 0
+		if (ax > cx && bx > cx){
+			if (ay <= y && y < by) return 1
+			return 0
+		}
 		if (ax > cx && bx <= cx){
-			if (above) return outside ? 2 : 1
-			if (below) return 0
-			return 1
+			if (y >= by) return outside ? 2 : 1
+			if (y >= ay) return 1
+			return 0
 		}
-		if (ax <= cx && bx > cx){
-			if (above) return 0
-			if (below) return outside ? 2 : 1
-			return 1
+		//if (ax <= cx && bx > cx)
+		{
+			if (y < ay) return outside ? 2 : 1
+			if (y < by) return 1
+			return 0
 		}
 	}else{
 		// 'a' above 'b'
 		
-		if (ax <= cx && bx <= cx) return (between && outside) ? 1 : 0
-		if (ax > cx && bx > cx) return between ? (outside ? 1 : 0) : (outside ? 2 : 1)
+		if (ax <= cx && bx <= cx){
+			if (by <= y && y < ay && outside) return 1
+			return 0
+		}
+		if (ax > cx && bx > cx){
+			if (y >= ay || y < by) return outside ? 2 : 1
+			return outside ? 1 : 0
+		}
 		if (ax > cx && bx <= cx){
-			if (above) return outside ? 2 : 1
-			if (below) return 0
-			return outside ? 1 : 0
+			if (y >= ay) return outside ? 2 : 1
+			if (y >= by && outside) return 1
+			return 0
 		}
-		if (ax <= cx && bx > cx){
-			if (above) return 0
-			if (below) return outside ? 2 : 1
-			return outside ? 1 : 0
+		//if (ax <= cx && bx > cx)
+		{
+			if (y < by) return outside ? 2 : 1
+			if (y < ay && outside) return 1
+			return 0
 		}
 	}
 }
 
-function isInPolygon(x, y, points){
+function countSegmentIntersections(x, y, segment){
+	var a = segment.a
+	var b = segment.b
+	
+	if (a[1] > b[1]){
+		var temp = a
+		a = b
+		b = temp
+	}
+	
+	var ax = a[0]
+	var ay = a[1]
+	var bx = b[0]
+	var by = b[1]
+	
+	// ignore horizontal line segments and intersections in 'b'
+	if (ay != by && ay <= y && y < by){
+		if ((x - ax)*(by - ay) - (y - ay)*(bx - ax) <= 0){
+			return 1
+		}
+	}
+	return 0
+}
+
+function isInGeneralPolygon(x, y, curves){
 	var nIntersections = 0
-	var n = points.length;
-	var a = points[n - 1]
-	var inside = false
-	for (var i = 0; i < n; i++){
-		var b = points[i]
-		var aNext = b
-		
-		// make 'a' the lower point
-		if (a[1] > b[1]){
-			var temp = a
-			a = b
-			b = temp
+	for (var i = 0; i < curves.length; i++){
+		var curve = curves[i]
+		switch (curve.constructor){
+			case Segment:
+				nIntersections += countSegmentIntersections(x, y, curve);
+			break
+			case Arc:
+				nIntersections += countArcIntersections(x, y, curve);
+			break
 		}
-		
-		var ax = a[0]
-		var ay = a[1]
-		var bx = b[0]
-		var by = b[1]
-		
-		// ignore horizontal line segments and intersections in 'b'
-		if (ay != by && ay <= y && y < by){
-			inside ^= (x - ax)*(by - ay) - (y - ay)*(bx - ax) <= 0
-		}
-		
-		a = aNext
 	}
-	return inside
-}
-
-var points = new Array(5)
-for (var i = 0; i < points.length; i++){
-	var x = Math.random()*nx|0
-	var y = Math.random()*ny|0
-	points[i] = [x, y]
-}
-
-function isInArcs(x, y, arcs){
-	var nIntersections = 0
-	for (var i = 0; i < arcs.length; i++){
-		nIntersections = countArcIntersections(x, y, arcs[i])
-	}
-	return nIntersections & 1
+	return nIntersections & 1 == 1
 }
 
 function redraw(){
@@ -162,72 +186,19 @@ function redraw(){
 	context.setTransform(1, 0, 0, -1, 0, canvas.height)
 	context.lineWidth = 2
 		
-	if (0){
-		
-		var i = 0
-		for (var y = 0; y < ny; y++){
-			for (var x = 0; x < nx; x++){
-				
-				if (isInPolygon(x, ny - 1 - y, points)){
-					abgr[i+0] = 0x55
-					abgr[i+1] = 0x55
-					abgr[i+2] = 0x55
-				}else{
-					abgr[i+0] = 0
-					abgr[i+1] = 0
-					abgr[i+2] = 0
-				}
-				abgr[i+3] = 0xff
-				i += 4
-			}
-		}
-		
-		context2.putImageData(imageData, 0, 0)
-		
-		context2.strokeStyle = "green"
-		//drawPolygon(points)
-	}
-	
 	if (1){
-		var radius = 100
-		var center = [200, 300]
-		a = add(center, scale(sub(a, center), radius))
-		b = add(center, scale(sub(b, center), radius))
-		a[0] = Math.round(a[0])
-		a[1] = Math.round(a[1])
-		b[0] = Math.round(b[0])
-		b[1] = Math.round(b[1])
-		
-		var arc = new Arc(center, radius, a, b, arcIsCCW)
-		
 		var i = 0
 		for (var y = 0; y < ny; y++){
 			for (var x = 0; x < nx; x++){
 				
-				var n = countArcIntersections(x, ny - 1 - y, arc)
-				
-				switch (n){
-					case 0:
-						abgr[i+0] = 0
-						abgr[i+1] = 0
-						abgr[i+2] = 0
-					break
-					case 1:
-						abgr[i+0] = 0
-						abgr[i+1] = 0xff
-						abgr[i+2] = 0
-					break
-					case 2:
-						abgr[i+0] = 0
-						abgr[i+1] = 0
-						abgr[i+2] = 0xff
-					break
-					default:
-						abgr[i+0] = 0x55
-						abgr[i+1] = 0x55
-						abgr[i+2] = 0x55
-					break
-					
+				if (isInGeneralPolygon(x, ny - 1 - y, curves)){
+					abgr[i+0] = 0x77
+					abgr[i+1] = 0x77
+					abgr[i+2] = 0x77
+				}else{
+					abgr[i+0] = 0x33
+					abgr[i+1] = 0x33
+					abgr[i+2] = 0x33
 				}
 				abgr[i+3] = 0xff
 				i += 4
@@ -236,87 +207,11 @@ function redraw(){
 		
 		context.putImageData(imageData, 0, 0)
 		
-		context.strokeStyle = "yellow"
-		arc.draw(context)
-		
-		context.font = "50px Arial"
-		context.fillStyle = "black"
-		context.strokeStyle = "white"
-		
-		
-		
-		if (arc.clockwise){
-			writeOutlined("a", arc.b)
-			writeOutlined("b", arc.a)
-		}else{
-			writeOutlined("a", arc.a)
-			writeOutlined("b", arc.b)
-		}
-		
-		if (0){		
-			context.lineWidth = 1
-			context.strokeStyle = "red"
-			new Segment(add(arc.b, [0, -0.5]), add(arc.b, [1000, -0.5])).draw()
-			context.lineWidth = 2
-		}
-		
-		var center0 = [50, 50]
-		var radius0 = 25
-		var arcs = [
-			new Arc(center0, radius0, add(center0, [radius0, 0]), add(center0, [0, radius0]), true),
-			new Arc(center0, radius0, add(center0, [radius0, 0]), add(center0, [0, radius0]), false),
-		]
-		
-		var i = 0
-		for (var y = 0; y < ny2; y++){
-			for (var x = 0; x < nx2; x++){
-				
-				if (isInArcs(x, ny2 - 1 - y, arcs)){
-					abgr2[i+0] = 0x55
-					abgr2[i+1] = 0x55
-					abgr2[i+2] = 0x55
-				}else{
-					abgr2[i+0] = 0
-					abgr2[i+1] = 0
-					abgr2[i+2] = 0
-				}
-				abgr2[i+3] = 0xff
-				i += 4
-			}
-		}
-		
-		context2.putImageData(imageData2, 0, 0)
-		
-		for (var i = 0; i < arcs.length; i++){
-			context2.strokeStyle = colors[i % colors.length]
-			arcs[i].draw(context2)
-		}
-	}
-	
-	/*
-	if (1){
-		// test splitting functions
-		var curves = [
-			new Arc(mouse, 100, 0.5, 1.5),
-			new Arc([256, 256], 150, -0.3, -0.9, true),
-			new Arc([300, 400], 125, -0.3, -1.9),
-			new Segment([100, 350], [450, 300]),
-			new Segment([150, 50], [450, 500]),
-		]
-		
-		curves = splitAtIntersections(curves)
-		curves = splitLongArcs(curves)
-		curves = splitIntersectingArcs(curves)
-		
 		for (var i = 0; i < curves.length; i++){
 			context.strokeStyle = colors[i % colors.length]
-			var curve = curves[i]
-			curve.draw()
-			var middle = curve.middle()
-			write(i, middle)
+			curves[i].draw(context)
 		}
 	}
-	*/
 }
 
 function resize(){
@@ -329,39 +224,20 @@ resize()
 
 window.onresize = resize
 
-window.onmousedown = function(e){
+canvas.onmousedown = function(e){
 	var x = e.clientX
 	var y = canvas.height - e.clientY - 1
 	mouse = [x, y]
 	
-	if (e.buttons & 4){
-		arcIsCCW = !arcIsCCW
-	}
+	makeNewCurves()
+	
 	redraw()
 }
 
-window.onmousemove = function(e){
+canvas.onmousemove = function(e){
 	var x = e.clientX
 	var y = canvas.height - e.clientY - 1
 	mouse = [x, y]
-	
-	if (e.buttons & 1){
-		if (dist2(mouse, a) < dist2(mouse, b)){
-			a = [x, y]
-		}else{
-			b = [x, y]
-		}
-		
-		var closest = points[0]
-		for (var i = 1; i < points.length; i++){
-			var point = points[i]
-			if (dist2(mouse, point) < dist2(mouse, closest)){
-				closest = point
-			}
-		}
-		closest[0] = x
-		closest[1] = y
-	}
 	
 	redraw()
 }
