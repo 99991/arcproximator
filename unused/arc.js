@@ -12,7 +12,7 @@ function Arc(center, radius, a, b, counterclockwise){
 	this.counterclockwise = counterclockwise
 }
 
-Arc.prototype.draw = function(fill){
+Arc.prototype.draw = function(context, fill){
 	var a = this.a
 	var b = this.b
 	var center = this.center

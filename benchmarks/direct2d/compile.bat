@@ -1,0 +1,1 @@
+C:\TDM-GCC-64\bin\g++ DemoApp.cpp -ld2d1 -lole32

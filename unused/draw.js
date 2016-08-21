@@ -29,3 +29,11 @@ function write(text, p){
 	context.fillText(text, p[0], canvas.height - p[1])
 	context.restore()
 }
+
+function writeOutlined(text, p){
+	context.save()
+	context.resetTransform()
+	context.fillText(text, p[0], canvas.height - p[1])
+	context.strokeText(text, p[0], canvas.height - p[1])
+	context.restore()
+}
