@@ -3,6 +3,10 @@ function isLeftOf(p, a, b){
 	return (p[0] - a[0])*(b[1] - a[1]) - (p[1] - a[1])*(b[0] - a[0]) < 0
 }
 
+function isLeftOfOrOn(p, a, b){
+	return (p[0] - a[0])*(b[1] - a[1]) - (p[1] - a[1])*(b[0] - a[0]) <= 0
+}
+
 function isRightOf(p, a, b){
 	return (p[0] - a[0])*(b[1] - a[1]) - (p[1] - a[1])*(b[0] - a[0]) > 0
 }
@@ -13,6 +17,10 @@ function isInFrontOf(p, a, b){
 
 function dot(a, b){
 	return a[0]*b[0] + a[1]*b[1]
+}
+
+function det(a, b){
+	return a[0]*b[1] - a[1]*b[0]
 }
 
 function add(a, b){
@@ -35,6 +43,10 @@ function dist2(a, b){
 	var dx = a[0] - b[0]
 	var dy = a[1] - b[1]
 	return dx*dx + dy*dy
+}
+
+function round(a){
+	return [Math.round(a[0]), Math.round(a[1])]
 }
 
 function atan(p){
