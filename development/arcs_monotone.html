@@ -28,10 +28,8 @@ var controlPoints = [
 	[400, 500],
 ]
 
-var curves = []
-
-function makeNewCurves(){
-	curves = []
+function makeCurves(){
+	var curves = []
 	
 	var a0 = [100, 100]
 	var a = a0
@@ -59,230 +57,61 @@ function makeNewCurves(){
 		
 		a = b
 	}
+	
+	return curves
 }
 
-makeNewCurves()
-
-function countArcIntersections(x, y, arc){
-	var clockwise = !arc.counterclockwise
-	var a = arc.a
-	var b = arc.b
-	
-	// cw case is same as ccw case with 'a' and 'b' swapped
-	if (clockwise){
-		var temp = a
-		a = b
-		b = temp
-	}
-	
-	var center = arc.center
-	var radius = arc.radius
-	var ax = a[0]
-	var ay = a[1]
-	var bx = b[0]
-	var by = b[1]
-	var cx = center[0]
-	var cy = center[1]
-	
-	// bounding box of circle
-	var right = cx + radius
-	var bottom = cy - radius
-	var top = cy + radius
-	
-	// if ray does not intersect bounding box
-	if (y < bottom || y > top || x > right) return 0
-	
-	var outside = dist2([x, y], center) > radius*radius
-	
-	// if ray does not intersect circle
-	if (outside && x > cx) return 0
-	
-	if (ay == by){
-		// TODO
-	}
-	
-	if (ay < by){
-		// 'b' above 'a'
-		
-		// TODO ax == cx or ay == cy
-		
-		if (ax <= cx && bx <= cx){
-			if ((y < ay || y >= by) && outside) return 2
-			return 1
-		}
-		if (ax > cx && bx > cx){
-			if (ay <= y && y < by) return 1
-			return 0
-		}
-		if (ax > cx && bx <= cx){
-			if (y >= by) return outside ? 2 : 1
-			if (y >= ay) return 1
-			return 0
-		}
-		//if (ax <= cx && bx > cx)
-		{
-			if (y < ay) return outside ? 2 : 1
-			if (y < by) return 1
-			return 0
-		}
-	}else{
-		// 'a' above 'b'
-		
-		// TODO ax == cx or bx == cx
-		
-		if (ax <= cx && bx <= cx){
-			if (by <= y && y < ay && outside) return 1
-			return 0
-		}
-		if (ax > cx && bx > cx){
-			if (y >= ay || y < by) return outside ? 2 : 1
-			return outside ? 1 : 0
-		}
-		if (ax > cx && bx <= cx){
-			if (y >= ay) return outside ? 2 : 1
-			if (y >= by && outside) return 1
-			return 0
-		}
-		//if (ax <= cx && bx > cx)
-		{
-			if (y < by) return outside ? 2 : 1
-			if (y < ay && outside) return 1
-			return 0
-		}
-	}
-}
-
-var circles = []
-
-function getArcIntersections(x, y, arc, intersections){
-	var p = [x, y]
-	var center = arc.center
-	var radius = arc.radius
-	var a = arc.a
-	var b = arc.b
-	
-	if (arc.counterclockwise){
-		var temp = a
-		a = b
-		b = temp
-	}
-	
-	var cx = center[0]
-	var dx = cx - x
-	var dx2 = dx*dx
-	var d2 = dx2 - dist2(p, center) + radius*radius
-	
-	if (d2 >= 0){
-		var d = Math.sqrt(d2)
-		var d0 = dx - d
-		var d1 = dx + d
-		var p0 = [x + d0, y]
-		var p1 = [x + d1, y]
-		
-		if (isLeftOfOrOn(p0, a, b)){
-			intersections.push(p0)
-		}
-		if (isLeftOfOrOn(p1, a, b)){
-			intersections.push(p1)
-		}
-		
-		/*
-		if (isLeftOf(p0, a, b)){
-			if (dx >= 0){
-				if (dx2 >= +d2) intersections.push(p0)
-			}else{
-				if (-dx2 >= +d2) intersections.push(p0)
-			}
-		}
-		if (isLeftOf(p1, a, b)){
-			if (dx >= 0){
-				if (dx2 >= -d2) intersections.push(p1)
-			}else{
-				if (-dx2 >= -d2) intersections.push(p1)
-			}
-		}
-		*/
-	}
-	
-	return intersections
-}
-
-// shoot a horizontal ray to the right of [rx, ry]
-function getSegmentIntersections(rx, ry, segment, intersections){
-	var a = segment.a
-	var b = segment.b
-	
-	var ax = a[0]
-	var ay = a[1]
-	var bx = b[0]
-	var by = b[1]
-	
-	// return early if ray is not between 'a' and 'b'
-	if (ry < Math.min(ay, by) || ry > Math.max(ay, by)) return
-	
-	// ignore horizontal line segments
-	if (ay == by) return
-	
-	var x = ax + (ry - ay)*(ax - bx)/(ay - by)
-	
-	//if (x >= rx)
-	intersections.push([x, ry])
-}
-
-function countArcIntersections2(x, y, arc){
-	var intersections = []
-	getArcIntersections(x, y, arc, intersections)
-	return intersections.length
-}
-
-function countSegmentIntersections(x, y, segment){
-	var a = segment.a
-	var b = segment.b
-	
-	if (a[1] > b[1]){
-		var temp = a
-		a = b
-		b = temp
-	}
-	
-	var ax = a[0]
-	var ay = a[1]
-	var bx = b[0]
-	var by = b[1]
-	
-	// ignore horizontal line segments and intersections in 'b'
-	if (ay != by && ay <= y && y < by){
-		if ((x - ax)*(by - ay) - (y - ay)*(bx - ax) <= 0){
-			return 1
-		}
-	}
-	return 0
-}
-
-function isInGeneralPolygon(x, y, curves){
-	var nIntersections = 0
+function splitCurvesMonotone(curves){	
+	var newCurves = []
 	for (var i = 0; i < curves.length; i++){
 		var curve = curves[i]
-		switch (curve.constructor){
-			case Segment:
-				nIntersections += countSegmentIntersections(x, y, curve);
-			break
-			case Arc:
-				nIntersections += countArcIntersections(x, y, curve);
-			break
+		if (curve.constructor == Arc){
+			curve.splitXMonotone(newCurves)
+		}else{
+			newCurves.push(curve)
+		}
+	}
+	return newCurves
+}
+
+function splitIntersectingCurves(curves){
+	var n = curves.length
+	var splitPoints = new Array(n)
+	for (var i = 0; i < n; i++) splitPoints[i] = []
+	for (var i = 0; i < n; i++){
+		var curve0 = curves[i]
+		for (var j = i + 1; j < n; j++){
+			var curve1 = curves[j]
+			var intersections = []
+			if (curve0.constructor == Arc && curve1.constructor == Arc){
+				intersectionsArcArc(curve0, curve1, intersections)
+			}
+			if (curve0.constructor == Segment && curve1.constructor == Segment){
+				intersectionsSegmentSegment(curve0, curve1, intersections)
+			}
+			if (curve0.constructor == Arc && curve1.constructor == Segment){
+				intersectionsArcSegment(curve0, curve1, intersections)
+			}
+			if (curve0.constructor == Segment && curve1.constructor == Arc){
+				intersectionsArcSegment(curve1, curve0, intersections)
+			}
+			append(splitPoints[i], intersections)
+			append(splitPoints[j], intersections)
+			
+			/*
+			for (var k = 0; k < intersections.length; k++){
+				context.strokeStyle = "white"
+				drawCircle(context, intersections[k], 5)
+			}
+			*/
 		}
 	}
 	
-	return nIntersections & 1 == 1
-}
-
-function isEdgeCase(curves){
-	for (var y = 0; y < ny; y++){
-		if (isInGeneralPolygon(-1000, y, curves)){
-			return true
-		}
+	var newCurves = []
+	for (var i = 0; i < curves.length; i++){
+		curves[i].splitAtPoints(splitPoints[i], newCurves)
 	}
-	return false
+	return newCurves
 }
 
 function redraw(){
@@ -292,34 +121,123 @@ function redraw(){
 	context.lineWidth = 2
 	
 	if (0){
+		// test arc.splitAtPoints
 		
-		var x = mouse[0]
-		var y = mouse[1]
+		var center = [256, 256]
+		var radius = 200
+		var a = controlPoints[0]
+		var b = controlPoints[1]
+		a = add(center, scale(sub(a, center), radius))
+		b = add(center, scale(sub(b, center), radius))
+		/*
+		a = round(a)
+		b = round(b)
+		*/
+		controlPoints[0] = a
+		controlPoints[1] = b
+		var arc = new Arc(center, radius, a, b, true)
 		
-		var segment = new Segment([100, 200], [150, 450])
-		
-		var intersections = []
-		getSegmentIntersections(x, y, segment, intersections)
-		for (var i = 0; i < intersections.length; i++){
-			drawCircle(context, intersections[i], 5)
+		context.lineWidth = 1
+		context.strokeStyle = "gray"
+		var splitPoints = []
+		for (var i = 0; i < 1000; i++){
+			var point = add(center, polar(Math.random()*Math.PI*2, radius))
+			splitPoints.push(point)
+			//drawCircle(context, point, 2)
 		}
-		segment.draw(context)
+		
+		var arcs = []
+		arc.splitAtPoints(splitPoints, arcs)
+		
+		context.lineWidth = 3
+		for (var i = 0; i < arcs.length; i++){
+			context.strokeStyle = colors[i % colors.length]
+			arcs[i].draw(context)
+		}
+		
+		context.font = "50px Arial"
+		context.strokeWidth = 2
+		context.fillStyle = "black"
+		context.strokeStyle = "white"
+		
+		writeOutlined(context, "a", a)
+		writeOutlined(context, "b", b)
+		
+		context.strokeStyle = "black"
+	}
+	
+	if (0){
+		// test arc.splitXMonotone
+		
+		var center = [300, 200]
+		var radius = 100
+		var a = controlPoints[0]
+		var b = controlPoints[1]
+		
+		a = add(center, scale(sub(a, center), radius))
+		b = add(center, scale(sub(b, center), radius))
+		/*
+		a = round(a)
+		b = round(b)
+		*/
+		/*
+		// this breaks for atan instead of diamondAngle
+		a = [314.9252692330051, 101.12009133134117]
+		b = [234.85777156102552, 124.12846334754737]
+		*/
+		
+		controlPoints[0] = a
+		controlPoints[1] = b
+		var arc = new Arc(center, radius, a, b, true)
+		
+		var arcs0 = [arc]
+		var arcs1 = splitCurvesMonotone(arcs0)
+		
+		var arcs2 = splitCurvesMonotone(arcs1)
+		
+		if (arcs1.length != arcs2.length){
+			console.log("ERROR: Different arcs for second call")
+			console.log(dist(a, center), dist(b, center))
+			console.log(arc)
+			console.log(arcs1)
+			console.log(arcs2)
+		}
+		
+		var arcs = arcs1
+		for (var i = 0; i < arcs.length; i++){
+			context.strokeStyle = colors[i % colors.length]
+			arcs[i].draw(context)
+		}
+		
+		context.font = "50px Arial"
+		context.strokeWidth = 2
+		context.fillStyle = "black"
+		context.strokeStyle = "white"
+		
+		writeOutlined(context, "a", a)
+		writeOutlined(context, "b", b)
+		
+		context.strokeStyle = "black"
 	}
 	
 	if (1){
-		
 		context.fillStyle = "#555555"
 		context.fillRect(0, 0, canvas.width, canvas.height)
 		
+		var curves = makeCurves()
+		var curves0 = curves
+	
+		curves = splitIntersectingCurves(curves)
+		curves = splitCurvesMonotone(curves)
+		
+		/*
 		var eps = 1e-10
 		var epsHalf = eps*0.5
 		
-		var n = curves.length
-		var splitPoints = new Array(n);
-		for (var i = 0; i < n; i++){
+		for (var i = 0; i < curves.length; i++){
 			var intersections = []
 			var a = curves[i].a
-			for (var j = 0; j < n; j++){
+			for (var j = 0; j < curves.length; j++){
 				var curve = curves[j]
 				switch (curve.constructor){
 					case Arc:
@@ -338,6 +256,7 @@ function redraw(){
 		
 			context.strokeStyle = "white"
 			
+			// TODO might count intersections at vertices twice
 			if (pLeft && left.length & 1){
 				drawLine(context, a, pLeft)
 				drawCircle(context, a, 5)
@@ -345,125 +264,50 @@ function redraw(){
 			}
 			if (pRight && right.length & 1){
 				drawLine(context, a, pRight)
-				drawCircle(context, a, 5)
-				drawCircle(context, pRight, 5)
+				drawCircle(context, a, 3)
+				drawCircle(context, pRight, 3)
 			}
 			
 			for (var j = 0; j < intersections.length; j++){
 				//drawCircle(context, intersections[j], 5)
 			}
 		}
+		*/
 		
-		for (var i = 0; i < n; i++){
-			context.strokeStyle = colors[i % colors.length]
-			curves[i].draw(context)
-		}
-		
-	}
-	
-	if (0){
-		
-		var center = [300, 200]
-		var radius = 100
-		var a = controlPoints[0]
-		var b = controlPoints[1]
-		//var a = add(center, polar(-2.2, radius))
-		//var b = add(center, polar(+0.3, radius))
-		a = add(center, scale(sub(a, center), radius))
-		b = add(center, scale(sub(b, center), radius))
-		a = round(a)
-		b = round(b)
-		var arc = new Arc(center, radius, a, b, false)
-		
-		var i = 0
-		for (var y = 0; y < ny; y++){
-			for (var x = 0; x < nx; x++){
-				
-				var n = countArcIntersections2(x, ny - 1 - y, arc)
-				
-				switch (n){
-					case 0:
-						abgr[i+0] = 0x33
-						abgr[i+1] = 0x33
-						abgr[i+2] = 0x33
-					break
-					case 1:
-						abgr[i+0] = 0x77
-						abgr[i+1] = 0x77
-						abgr[i+2] = 0x77
-					break
-					case 2:
-						abgr[i+0] = 0xcc
-						abgr[i+1] = 0xcc
-						abgr[i+2] = 0xcc
-					break
-				}
-				abgr[i+3] = 0xff
-				i += 4
+		if (1){	
+			// debug less curves
+			
+			context.lineWidth = 2
+			for (var i = 0; i < curves0.length; i++){
+				context.strokeStyle = colors[i % colors.length]
+				curves0[i].draw(context)
+			}
+					
+			context.lineWidth = 3
+			context.strokeStyle = "#555555"
+			for (var i = 0; i < curves.length; i++){
+				curves[i].draw(context)
 			}
 		}
 		
-		context.putImageData(imageData, 0, 0)
-		
-		context.strokeStyle = "black"
-		drawCircle(context, center, radius)
-		
-		context.strokeStyle = "yellow"
-		while (circles.length > 0){
-			var p = circles.pop()
-			drawCircle(context, p, 5)
+		if (0){
+			// debug more curves
+			
+			context.lineWidth = 2
+			for (var i = 0; i < curves.length; i++){
+				context.strokeStyle = colors[i % colors.length]
+				curves[i].draw(context)
+			}
+			
+			context.lineWidth = 3
+			context.strokeStyle = "#555555"
+			for (var i = 0; i < curves0.length; i++){
+				curves0[i].draw(context)
+			}
 		}
-		
-		context.font = "50px Arial"
-		context.strokeWidth = 2
-		context.fillStyle = "black"
-		context.strokeStyle = "white"
-		if (arc.counterclockwise){
-			writeOutlined(context, "a", b)
-			writeOutlined(context, "b", a)
-		}else{
-			writeOutlined(context, "a", a)
-			writeOutlined(context, "b", b)
-		}
-		
-		context.strokeStyle = "black"
 	}
 		
 	if (0){
-		/*
-		var center = [200, 200]
-		var radius = 50
-		var a = add(center, [radius, 0])
-		var b = add(center, [0, radius])
-		var arc = new Arc(center, radius, a, b, true)
-		
-		context.font = "50px Arial"
-		context.strokeWidth = 2
-		context.fillStyle = "black"
-		context.strokeStyle = "white"
-		if (arc.counterclockwise){
-			writeOutlined(context, "a", a)
-			writeOutlined(context, "b", b)
-		}else{
-			writeOutlined(context, "a", b)
-			writeOutlined(context, "b", a)
-		}
-		
-		context.strokeStyle = "black"
-		arc.draw(context)
-		
-		console.log(countArcIntersections(a[0], a[1], arc))
-		*/
-		
-		/*
-		for (var i = 0; i < 1000; i++){
-			if (isEdgeCase(curves)){
-				console.log("WARNING: found edge case")
-				break
-			}
-			makeNewCurves()
-		}
-		*/
 		
 		var i = 0
 		for (var y = 0; y < ny; y++){
@@ -508,8 +352,6 @@ canvas.onmousedown = function(e){
 	var y = canvas.height - e.clientY - 1
 	mouse = [x, y]
 	
-	makeNewCurves()
-	
 	redraw()
 }
 
@@ -526,6 +368,7 @@ canvas.onmousemove = function(e){
 				closest = point
 			}
 		}
+		
 		closest[0] = x
 		closest[1] = y
 	}

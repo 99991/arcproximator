@@ -118,3 +118,144 @@ Arc.prototype.getHull = function(){
 	
 	return new Triangle(a, b, p)
 }
+
+Arc.prototype.splitAtPoints = function(points, arcs){
+	var a = this.a
+	var b = this.b
+	var center = this.center
+	var radius = this.radius
+	var ccw = this.counterclockwise
+	var arc = this
+
+	var eps = 1e-5
+	
+	points = filter(function(p){
+		if (new Segment(a, b).dist(p) < eps) return false
+		return arc.sees(p) && !almostEqualPoints(p, a, eps) && !almostEqualPoints(p, b, eps)
+	}, points)
+	
+	/*
+	var startAngle = diamondAngle(sub(a, center))
+	sortByKey(points, function(p){
+		var angle = diamondAngle(sub(p, center))
+		if (angle < startAngle) angle += 4
+		return angle
+	})
+	*/
+	var startAngle = atan(sub(a, center))
+	sortByKey(points, function(p){
+		var angle = atan(sub(p, center))
+		if (angle < startAngle) angle += Math.PI*2
+		return angle
+	})
+	
+	if (!ccw) reverse(points)
+	
+	points.push(b)
+	for (var i = 1; i < points.length; i++){
+		b = points[i]
+		arcs.push(new Arc(center, radius, a, b, ccw))
+		a = b
+	}
+}
+/*
+function getXMonotoneSplitPoints(a, b, center, radius, ccw){
+	var ax = a[0]
+	var ay = a[1]
+	var bx = b[0]
+	var by = b[1]
+	var cx = center[0]
+	var cy = center[1]
+	var left = [cx - radius, cy]
+	var right = [cx + radius, cy]
+		
+	var qa = quadrant(sub(a, center))
+	var qb = quadrant(sub(b, center))
+	
+	if (ccw){
+		switch (qa){
+			case 0: switch (qb){
+				case 0: return ay >= by ? [left, right] : []
+				case 1: return []
+				case 2: return [left]
+				case 3: return [left]
+			}
+			case 1: switch (qb){
+				case 0: return [left, right]
+				case 1: return ay <= by ? [left, right] : []
+				case 2: return [left]
+				case 3: return [left]
+			}
+			case 2: switch (qb){
+				case 0: return [right]
+				case 1: return [right]
+				case 2: return ay <= by ? [right, left] : []
+				case 3: return []
+			}
+			case 3: switch (qb){
+				case 0: return [right]
+				case 1: return [right]
+				case 2: return [right, left]
+				case 3: return ay >= by ? [right, left] : []
+			}
+		}
+	}else{
+		switch (qa){
+			case 0: switch (qb){
+				case 0: return ay <= by ? [right, left] : []
+				case 1: return [right, left]
+				case 2: return [right]
+				case 3: return [right]
+			}
+			case 1: switch (qb){
+				case 0: return []
+				case 1: return ay >= by ? [right, left] : []
+				case 2: return [right]
+				case 3: return [right]
+			}
+			case 2: switch (qb){
+				case 0: return [left]
+				case 1: return [left]
+				case 2: return ay >= by ?  [left, right] : []
+				case 3: return [left, right]
+			}
+			case 3: switch (qb){
+				case 0: return [left]
+				case 1: return [left]
+				case 2: return []
+				case 3: return ay <= by ? [left, right] : []
+			}
+		}
+	}
+}
+*/
+Arc.prototype.splitXMonotone = function(arcs){
+	var center = this.center
+	var radius = this.radius
+	var right = [center[0] + radius, center[1]]
+	var top = [center[0], center[1] + radius]
+	var left = [center[0] - radius, center[1]]
+	var bottom = [center[0], center[1] - radius]
+	return this.splitAtPoints([right, top, left, bottom], arcs)
+	/*
+	var a = this.a
+	var b = this.b
+	var center = this.center
+	var radius = this.radius
+	var ccw = this.counterclockwise
+
+	var points = getXMonotoneSplitPoints(a, b, center, radius, ccw)
+	
+	// TODO don't add those in the first place
+	points = filter(function(p){
+		return !isEqual(p, a) && !equal(p, b)
+	}, points)
+	
+	points.push(b)
+	for (var i = 0; i < points.length; i++){
+		b = points[i]
+		arcs.push(new Arc(center, radius, a, b, ccw))
+		a = b
+	}
+	*/
+}

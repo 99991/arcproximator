@@ -96,10 +96,22 @@ function lerp(a, b, u){
 	}
 }
 
+function isEqual(a, b){
+	return a[0] == b[0] && a[1] == b[1]
+}
+
 function diamondAngle(p){
 	var x = p[0]
 	var y = p[1]
 	return y >= 0 ?
 		(x >= 0 ? 0 + y/(x + y) : 1 + x/(x - y)) :
 		(x <  0 ? 2 + y/(x + y) : 3 + x/(x - y))
+}
+
+function quadrant(p){
+	if (p[0] >= 0){
+		return p[1] >= 0 ? 0 : 3
+	}else{
+		return p[1] >= 0 ? 1 : 2
+	}
 }

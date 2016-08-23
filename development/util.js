@@ -111,6 +111,19 @@ function max(values, key){
 function first(values){
 	return values[0]
 }
+
+function reverse(values){
+	var n = values.length
+	for (var i = 0, j = n - 1; i < j; i++, j--){
+		swap(values, i, j)
+	}
+}
+
+function clamp(x, a, b){
+	if (x < a) return a
+	if (x > b) return b
+	return x
+}
 /*
 function makePairs(values){
 	var n = values.length
