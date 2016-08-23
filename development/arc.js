@@ -34,7 +34,7 @@ Arc.prototype.sees = function(p){
 		return isLeftOf(p, this.a, this.b)
 	}
 }
-
+/*
 Arc.prototype.isOver180 = function(p){
 	if (this.counterclockwise){
 		return isLeftOf(this.b, this.a, this.center)
@@ -46,7 +46,7 @@ Arc.prototype.isOver180 = function(p){
 Arc.prototype.isOver90AndLessThan270 = function(p){
 	return isInFrontOf(this.b, this.a, this.center)
 }
-/*
+
 Arc.prototype.getPoints = function(n, t0, t1){
 	if (t0 === undefined) t0 = 0
 	if (t1 === undefined) t1 = 1
@@ -76,7 +76,7 @@ Arc.prototype.getPoints = function(n, t0, t1){
 	}
 	return points
 }
-*/
+
 Arc.prototype.split = function(p){
 	return [
 		new Arc(this.center, this.radius, this.a, p, this.counterclockwise),
@@ -118,6 +118,7 @@ Arc.prototype.getHull = function(){
 	
 	return new Triangle(a, b, p)
 }
+*/
 
 Arc.prototype.splitAtPoints = function(points, arcs){
 	var a = this.a

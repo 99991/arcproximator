@@ -228,7 +228,7 @@ function redraw(){
 		var curves0 = curves
 	
 		curves = splitIntersectingCurves(curves)
-		curves = splitCurvesMonotone(curves)
+		//curves = splitCurvesMonotone(curves)
 		
 		/*
 		var eps = 1e-10
@@ -279,14 +279,22 @@ function redraw(){
 			
 			context.lineWidth = 2
 			for (var i = 0; i < curves0.length; i++){
+				var curve = curves0[i]
+				
 				context.strokeStyle = colors[i % colors.length]
-				curves0[i].draw(context)
+				curve.draw(context)
+				
+				if (curve.constructor == Arc){
+					context.fillStyle = colors[i % colors.length]
+					write(context, curve.center[0] + ", " + curve.center[1], curve.center)
+				}
 			}
-					
+			
 			context.lineWidth = 3
-			context.strokeStyle = "#555555"
 			for (var i = 0; i < curves.length; i++){
-				curves[i].draw(context)
+				var curve = curves[i]
+				context.strokeStyle = "black"
+				curve.draw(context)
 			}
 		}
 		
