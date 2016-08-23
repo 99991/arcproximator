@@ -15,22 +15,19 @@ Segment.prototype.middle = function(u){
 	return smul(0.5, add(this.a, this.b))
 }
 
-Segment.prototype.draw = function(context, fill){
+Segment.prototype.draw = function(context){
+	drawLine(context, this.a, this.b)
+}
+
+Segment.prototype.closest = function(p){
 	var a = this.a
 	var b = this.b
-	context.beginPath()
-	context.moveTo(a[0], a[1])
-	context.lineTo(b[0], b[1])
-	if (fill) context.fill()
-	else context.stroke()
-}
-/*
-function closestPointToSegment(p, a, b){
-	var ba = sub(b, a)
 	var pa = sub(p, a)
-	var t = dot(pa, ba)/dot(ba, ba)
-	var u = clamp(t, 0, 1)
-	var q = add(a, smul(u, ba))
-	return q
+	var ba = sub(b, a)
+	var u = clamp(dot(pa, ba), 0, 1)
+	return lerp(a, b, u)
 }
-*/
+
+Segment.prototype.dist = function(p){
+	return dist(p, this.closest(p))
+}

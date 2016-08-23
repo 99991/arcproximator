@@ -279,28 +279,54 @@ def sweep(mouse, points):
     def fill(segment, delta):
         a, b = segment
         a_inter = get_intersections(a, a + delta, segments)
+        b_inter = get_intersections(b, b + delta, segments)
+
+        #m = (a + b)*0.5 + (b - a).left()*0.1
+        #draw_line(a, m)
+        #draw_line(m, b)
 
         a_inside = len(a_inter) & 1 == 1
+        b_inside = len(b_inter) & 1 == 1
 
         if a_inside:
             if delta.x > 0:
                 a2 = min(a_inter)
                 draw_line(a, a2, color='white')
-                return [[a, a2]]
             else:
                 a2 = max(a_inter)
-                draw_line(a, a2, color='green')
-                return [[a, a2]]
+                #draw_line(a, a2, color='green')
         
-        return []
+        if b_inside:
+            if delta.x > 0:
+                b2 = min(b_inter)
+            else:
+                b2 = max(b_inter)
+        
+        if a_inside and b_inside:
+            p = [a, a2, b2, b]
+            #draw_polygon(p)
+
+        if a_inside and not b_inside:
+            p = [a, a2, b]
+            #draw_polygon(p)
+
+        if not a_inside and b_inside:
+            p = [b, b2, a]
+            #draw_polygon(p)
         
 
-    new_segments = []
     for segment in segments:
-        new_segments.extend(fill(segment, Point(+1000, 0)))
-        new_segments.extend(fill(segment, Point(-1000, 0)))
-    
-    segments.extend(new_segments)
+        fill(segment, Point(+1000, 0))
+        fill(segment, Point(-1000, 0))
+        """
+        p, _ = segment
+        intersections = get_intersections(p, segments)
+        
+        if len(intersections) & 1:
+            intersection = min(intersections)
+            draw_line(p, intersection)
+            #draw_circle(intersection, 5, color='green')
+        """
 
 import Tkinter as tk
 import random
@@ -310,7 +336,7 @@ import traceback
 width = 800
 height = 800
 
-with open("star.txt", "rb") as f:
+with open("points.txt", "rb") as f:
     s = f.read()
     xy = list(map(float, s.split()))
     xs = xy[0::2]

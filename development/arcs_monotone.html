@@ -154,7 +154,7 @@ function countArcIntersections(x, y, arc){
 
 var circles = []
 
-function getArcIntersections(x, y, arc){
+function getArcIntersections(x, y, arc, intersections){
 	var p = [x, y]
 	var center = arc.center
 	var radius = arc.radius
@@ -172,8 +172,6 @@ function getArcIntersections(x, y, arc){
 	var dx2 = dx*dx
 	var d2 = dx2 - dist2(p, center) + radius*radius
 	
-	var intersections = []
-	
 	if (d2 >= 0){
 		var d = Math.sqrt(d2)
 		var d0 = dx - d
@@ -182,10 +180,10 @@ function getArcIntersections(x, y, arc){
 		var p1 = [x + d1, y]
 		
 		if (isLeftOfOrOn(p0, a, b)){
-			if (d0 >= 0) intersections.push(p0)
+			intersections.push(p0)
 		}
 		if (isLeftOfOrOn(p1, a, b)){
-			if (d1 >= 0) intersections.push(p1)
+			intersections.push(p1)
 		}
 		
 		/*
@@ -205,27 +203,36 @@ function getArcIntersections(x, y, arc){
 		}
 		*/
 	}
-	/*
-	// tie-breaking does not work as intended
-	
-	if (a[0] > cx && intersections.length > 0){
-		intersections = filter(function(p){
-			return p[1] != a[1]
-		}, intersections)
-	}
-	
-	if (b[0] < cx && intersections.length > 0){
-		intersections = filter(function(p){
-			return p[1] != b[1]
-		}, intersections)
-	}
-	*/
 	
 	return intersections
 }
 
+// shoot a horizontal ray to the right of [rx, ry]
+function getSegmentIntersections(rx, ry, segment, intersections){
+	var a = segment.a
+	var b = segment.b
+	
+	var ax = a[0]
+	var ay = a[1]
+	var bx = b[0]
+	var by = b[1]
+	
+	// return early if ray is not between 'a' and 'b'
+	if (ry < Math.min(ay, by) || ry > Math.max(ay, by)) return
+	
+	// ignore horizontal line segments
+	if (ay == by) return
+	
+	var x = ax + (ry - ay)*(ax - bx)/(ay - by)
+	
+	//if (x >= rx)
+	intersections.push([x, ry])
+}
+
 function countArcIntersections2(x, y, arc){
-	return getArcIntersections(x, y, arc).length
+	var intersections = []
+	getArcIntersections(x, y, arc, intersections)
+	return intersections.length
 }
 
 function countSegmentIntersections(x, y, segment){
@@ -283,6 +290,76 @@ function redraw(){
 	// y-axis should be up, not down
 	context.setTransform(1, 0, 0, -1, 0, canvas.height)
 	context.lineWidth = 2
+	
+	if (0){
+		
+		var x = mouse[0]
+		var y = mouse[1]
+		
+		var segment = new Segment([100, 200], [150, 450])
+		
+		var intersections = []
+		getSegmentIntersections(x, y, segment, intersections)
+		for (var i = 0; i < intersections.length; i++){
+			drawCircle(context, intersections[i], 5)
+		}
+		segment.draw(context)
+	}
+	
+	if (1){
+		
+		context.fillStyle = "#555555"
+		context.fillRect(0, 0, canvas.width, canvas.height)
+		
+		var eps = 1e-10
+		var epsHalf = eps*0.5
+		
+		var n = curves.length
+		var splitPoints = new Array(n);
+		for (var i = 0; i < n; i++){
+			var intersections = []
+			var a = curves[i].a
+			for (var j = 0; j < n; j++){
+				var curve = curves[j]
+				switch (curve.constructor){
+					case Arc:
+						getArcIntersections(a[0], a[1], curve, intersections)
+					break
+					case Segment:
+						getSegmentIntersections(a[0], a[1], curve, intersections)
+					break
+				}
+			}
+			
+			var left  = filter(function(p){return p[0] < a[0] - epsHalf}, intersections)
+			var right = filter(function(p){return p[0] > a[0] + epsHalf}, intersections)
+			var pLeft = max(left, first)
+			var pRight = min(right, first)
+		
+			context.strokeStyle = "white"
+			
+			if (pLeft && left.length & 1){
+				drawLine(context, a, pLeft)
+				drawCircle(context, a, 5)
+				drawCircle(context, pLeft, 5)
+			}
+			if (pRight && right.length & 1){
+				drawLine(context, a, pRight)
+				drawCircle(context, a, 5)
+				drawCircle(context, pRight, 5)
+			}
+			
+			for (var j = 0; j < intersections.length; j++){
+				//drawCircle(context, intersections[j], 5)
+			}
+		}
+		
+		for (var i = 0; i < n; i++){
+			context.strokeStyle = colors[i % colors.length]
+			curves[i].draw(context)
+		}
+		
+	}
 	
 	if (0){
 		
@@ -352,7 +429,7 @@ function redraw(){
 		context.strokeStyle = "black"
 	}
 		
-	if (1){
+	if (0){
 		/*
 		var center = [200, 200]
 		var radius = 50
@@ -378,6 +455,7 @@ function redraw(){
 		console.log(countArcIntersections(a[0], a[1], arc))
 		*/
 		
+		/*
 		for (var i = 0; i < 1000; i++){
 			if (isEdgeCase(curves)){
 				console.log("WARNING: found edge case")
@@ -385,6 +463,7 @@ function redraw(){
 			}
 			makeNewCurves()
 		}
+		*/
 		
 		var i = 0
 		for (var y = 0; y < ny; y++){

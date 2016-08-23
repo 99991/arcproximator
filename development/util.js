@@ -74,6 +74,43 @@ function identity(value){
 	return value
 }
 
+function min(values, key){
+	if (key === undefined) key = identity
+	var n = values.length
+	if (n == 0) return
+	var smallest = values[0]
+	var keySmallest = key(smallest)
+	for (var i = 1; i < n; i++){
+		var value = values[i]
+		var keyValue = key(value)
+		if (keySmallest > keyValue){
+			keySmallest = keyValue
+			smallest = value
+		}
+	}
+	return smallest
+}
+
+function max(values, key){
+	if (key === undefined) key = identity
+	var n = values.length
+	if (n == 0) return
+	var biggest = values[0]
+	var keyBiggest = key(biggest)
+	for (var i = 1; i < n; i++){
+		var value = values[i]
+		var keyValue = key(value)
+		if (keyBiggest < keyValue){
+			keyBiggest = keyValue
+			biggest = value
+		}
+	}
+	return biggest
+}
+
+function first(values){
+	return values[0]
+}
 /*
 function makePairs(values){
 	var n = values.length

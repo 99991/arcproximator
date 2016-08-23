@@ -10,6 +10,13 @@ function drawCircle(context, p, radius, fill){
 	else context.stroke()
 }
 
+function drawLine(context, a, b){
+	context.beginPath()
+	context.moveTo(a[0], a[1])
+	context.lineTo(b[0], b[1])
+	context.stroke()
+}
+
 function drawPolygon(context, points, fill){
 	var a = points[0]
 	context.beginPath()
