@@ -1,8 +1,12 @@
 from __future__ import print_function
 from fractions import Fraction
+from collections import defaultdict
 import math
 import itertools
 import functools
+
+def second(t):
+    return t[1]
 
 @functools.total_ordering
 class Point(object):
@@ -87,8 +91,14 @@ class Point(object):
 
 class Segment(tuple):
     
-    def __new__(typ, a, b):
-        return tuple.__new__(typ, (a, b))
+    def __new__(typ, a, b, count=1):
+        segment = tuple.__new__(typ, (a, b))
+        segment.count = count
+        return segment
+
+    def other(self, p):
+        a, b = self
+        return a if a != p else b
 
 class Arc(object):
 
@@ -219,34 +229,7 @@ def intersect_segment_circle(segment, circle):
     g = math.sqrt(f)/ba2
     return [d - g, d + g]
 
-def get_intersections(p, q, segments):
-    pq = Segment(p, q)
-
-    all_intersections = []
-    
-    for segment in segments:
-        a, b = segment
-        # ignore horizontal segments
-        if a.y == b.y:
-            continue
-        
-        intersections = intersect(pq, segment)
-
-        for intersection in intersections:
-            # let the point 'a' be the lower one
-            if a.y > b.y:
-                a, b = b, a
-            
-            # segments are half-open
-            # so we ignore the upper segment point
-            if intersection == b:
-                continue
-
-            all_intersections.append(intersection)
-
-    return all_intersections
-
-def sweep(mouse, points):
+def triangulate(mouse, points):
     draw_polygon(points, '#222222')
     
     segments = []
@@ -255,13 +238,12 @@ def sweep(mouse, points):
         segments.append(Segment(a, b))
         a = b
     
-    n = len(segments)
-    split_points = [[] for _ in range(n)]
+    split_points = [[] for _ in range(len(segments))]
 
     all_intersections = [Point(0, 0)]
-    for i in range(n):
+    for i in range(len(segments)):
         seg_ab = segments[i]
-        for j in range(i+1, n):
+        for j in range(i+1, len(segments)):
             seg_cd = segments[j]
             intersections = intersect(seg_ab, seg_cd)
             
@@ -270,35 +252,99 @@ def sweep(mouse, points):
 
     segments = split_things(segments, split_points, split_segment)
 
-    random.seed(1)
-    for segment in segments:
-        draw_line(segment[0], segment[1], random_hex_color())
-
-    def fill(segment, delta):
-        a, b = segment
-        a_inter = get_intersections(a, a + delta, segments)
-
-        a_inside = len(a_inter) & 1 == 1
-
-        if a_inside:
-            if delta.x > 0:
-                a2 = min(a_inter)
-                draw_line(a, a2, color='white')
-                return [[a, a2]]
-            else:
-                a2 = max(a_inter)
-                draw_line(a, a2, color='green')
-                return [[a, a2]]
-        
-        return []
-        
-
     new_segments = []
-    for segment in segments:
-        new_segments.extend(fill(segment, Point(+1000, 0)))
-        new_segments.extend(fill(segment, Point(-1000, 0)))
+    split_points = [[] for _ in range(len(segments))]
+    for j in range(len(segments)):
+        seg_cd = segments[j]
+        intersections = []
+        c = seg_cd[0]
+        sweep_line = Segment(c - Point(1000, 0), c + Point(1000, 0))
+
+        for i in range(len(segments)):
+            if i == j: continue
+            
+            seg_ab = segments[i]
+            a, b = seg_ab
+            
+            # ignore horizontal segments
+            if a.y == b.y:
+                return
+            
+            for intersection in intersect(sweep_line, seg_ab):
+                # let the point 'a' be the lower one
+                if a.y > b.y:
+                    a, b = b, a
+                
+                # segments are half-open
+                # so we ignore the upper segment point
+                if intersection == b:
+                    continue
+
+                intersections.append((intersection, i))
+
+        left  = [(p, i) for p, i in intersections if p.x < c.x]
+        right = [(p, i) for p, i in intersections if p.x > c.x]
+
+        if len(left) & 1:
+            p, i = max(left)
+            draw_line(c, p)
+            new_segments.append(Segment(c, p, 2))
+            split_points[i].append(p)
+        
+        if len(right) & 1:
+            p, i = min(right)
+            draw_line(c, p)
+            new_segments.append(Segment(c, p, 2))
+            split_points[i].append(p)
+
+    segments = split_things(segments, split_points, split_segment)
+
+    colors = ['#00ff00', '#ff0000', '#0000ff', '#ffff00', '#ff00ff', '#00ffff']
+    
+    random.seed(1)
+    for i, segment in enumerate(segments):
+        draw_line(segment[0], segment[1], colors[i % len(colors)])
     
     segments.extend(new_segments)
+
+    vertex_edges = defaultdict(list)
+    vertices = []
+    for segment in segments:
+        a, b = segment
+        vertices.append(a)
+        vertex_edges[a].append(segment)
+        vertex_edges[b].append(segment)
+
+    for p, edges in vertex_edges.items():
+        def key(edge):
+            return (edge.other(p) - p).angle()
+        edges.sort(key=key)
+
+    vertices.sort(key=second)
+    p = vertices[0]
+    edges = vertex_edges[p]
+    edge = edges[0]
+    def next_edge(edges, edge):
+        print("%d edges"%len(edges))
+        return edges[(edges.index(edge) + 1) % len(edges)]
+
+    draw_line(edge[0], edge[1], color='grey')
+    draw_circle(p, 5)
+    """
+    p = edge.other(p)
+    print(edge)
+    edge = next_edge(edges, edge)
+    print(edge)
+    draw_line(edge[0], edge[1], color='grey')
+    draw_circle(p, 5)
+    """
+    """
+    for _ in range(2):
+        draw_line(edge[0], edge[1], color='grey')
+        draw_circle(p, 5)
+        p = other(edge)
+        edge = next_edge(vertex_edges[p], edge)
+    """
 
 import Tkinter as tk
 import random
@@ -335,7 +381,8 @@ def draw_grid(dx=100, dy=100, color='gray'):
     for y in range(0, height, dy):
         canvas.create_line(0, y, width, y, dash=(4, 4), fill=color)
 
-#canvas.create_text(300, 300, text="hello, world!")
+def write(text, p, color='white'):
+    canvas.create_text(p[0], p[1], text=text, fill=color)
 
 def draw_circle(center, radius, color='white', n = 100):
     a = center + Point(radius, 0)
@@ -377,7 +424,7 @@ def redraw(mouse=Point(width/2, height/2)):
     """
 
     try:
-        sweep(mouse, points)
+        triangulate(mouse, points)
     except Exception as e:
         traceback.print_exc()
 
