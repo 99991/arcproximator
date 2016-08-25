@@ -1,6 +1,7 @@
 from __future__ import print_function
 from fractions import Fraction
 from collections import defaultdict
+import time
 import math
 import itertools
 import functools
@@ -12,8 +13,11 @@ def second(t):
 class Point(object):
     
     def __init__(self, x=0, y=0):
-        self.x = float(x)
-        self.y = float(y)
+        self.x = Fraction(x)
+        self.y = Fraction(y)
+
+    def __hash__(self):
+        return hash((self.x, self.y))
 
     def __getitem__(self, index):
         if index == 0:
@@ -85,20 +89,34 @@ class Point(object):
         return new_length/self.length() * self
 
     def __str__(self):
-        return "(%s, %s)"%(str(self[0]), str(self[1]))
+        x, y = self.x, self.y
+        return "(%f, %f, (%s, %s))"%(float(x), float(y), str(x), str(y))
     
     __repr__ = __str__
 
+def find_exactly(values, value):
+    for i, other in enumerate(values):
+        if value is other:
+            return i
+    raise ValueError("Could not find", value, "in", values)
+
+def remove_exactly(values, value):
+    del values[find_exactly(values, value)]
+
 class Segment(tuple):
     
-    def __new__(typ, a, b, count=1):
+    def __new__(typ, a, b, i=0):
         segment = tuple.__new__(typ, (a, b))
-        segment.count = count
+        segment.i = i
         return segment
 
     def other(self, p):
         a, b = self
         return a if a != p else b
+
+    def middle(self):
+        a, b = self
+        return 0.5*(a + b)
 
 class Arc(object):
 
@@ -146,8 +164,10 @@ def intersect(seg_ab, seg_cd):
     cax = c[0] - a[0]
     cay = c[1] - a[1]
 
-    t = (cax*bay - cay*bax)/det
-    s = (cax*dcy - cay*dcx)/det
+    inv_det = Fraction(1, det)
+
+    t = (cax*bay - cay*bax)*inv_det
+    s = (cax*dcy - cay*dcx)*inv_det
 
     if t >= 0 and t <= 1 and s >= 0 and s <= 1:
         qx = a[0] + s*bax
@@ -229,6 +249,17 @@ def intersect_segment_circle(segment, circle):
     g = math.sqrt(f)/ba2
     return [d - g, d + g]
 
+def sweep_intersect(y, seg_ab):
+    a, b = seg_ab
+    
+    if y < min(a.y, b.y) or y > max(a.y, b.y): return []
+
+    if a.y == b.y: return []
+
+    x = a.x + (y - a.y)*(a.x - b.x)/(a.y - b.y)
+
+    return [Point(x, y)]
+
 def triangulate(mouse, points):
     draw_polygon(points, '#222222')
     
@@ -239,6 +270,8 @@ def triangulate(mouse, points):
         a = b
     
     split_points = [[] for _ in range(len(segments))]
+
+    # TODO split overlapping line segments properly
 
     all_intersections = [Point(0, 0)]
     for i in range(len(segments)):
@@ -254,14 +287,17 @@ def triangulate(mouse, points):
 
     new_segments = []
     split_points = [[] for _ in range(len(segments))]
-    for j in range(len(segments)):
-        seg_cd = segments[j]
-        intersections = []
-        c = seg_cd[0]
-        sweep_line = Segment(c - Point(1000, 0), c + Point(1000, 0))
 
+    # TODO handle case with overlapping sweep lines
+
+    t = time.clock()
+    
+    vertices = list(sorted(set(a for a, b in segments), key=second))
+    
+    for c in vertices:
+        intersections = []
+        
         for i in range(len(segments)):
-            if i == j: continue
             
             seg_ab = segments[i]
             a, b = seg_ab
@@ -270,14 +306,10 @@ def triangulate(mouse, points):
             if a.y == b.y:
                 return
             
-            for intersection in intersect(sweep_line, seg_ab):
-                # let the point 'a' be the lower one
-                if a.y > b.y:
-                    a, b = b, a
-                
+            for intersection in sweep_intersect(c.y, seg_ab):
                 # segments are half-open
                 # so we ignore the upper segment point
-                if intersection == b:
+                if intersection.y == max(a.y, b.y):
                     continue
 
                 intersections.append((intersection, i))
@@ -287,31 +319,35 @@ def triangulate(mouse, points):
 
         if len(left) & 1:
             p, i = max(left)
-            draw_line(c, p)
-            new_segments.append(Segment(c, p, 2))
+            #draw_line(c, p)
+            new_segments.append(Segment(p, c))
+            new_segments.append(Segment(p, c))
             split_points[i].append(p)
         
         if len(right) & 1:
             p, i = min(right)
-            draw_line(c, p)
-            new_segments.append(Segment(c, p, 2))
+            #draw_line(c, p)
+            new_segments.append(Segment(p, c))
+            new_segments.append(Segment(p, c))
             split_points[i].append(p)
+
+    dt = time.clock() - t
+    print(dt)
 
     segments = split_things(segments, split_points, split_segment)
 
     colors = ['#00ff00', '#ff0000', '#0000ff', '#ffff00', '#ff00ff', '#00ffff']
-    
-    random.seed(1)
-    for i, segment in enumerate(segments):
-        draw_line(segment[0], segment[1], colors[i % len(colors)])
-    
+
     segments.extend(new_segments)
 
+    # remove zero length segments
+    segments = [segment for segment in segments if segment[0].dist2(segment[1]) > 0]
+    for i in range(len(segments)):
+        segments[i].i = i
+
     vertex_edges = defaultdict(list)
-    vertices = []
     for segment in segments:
         a, b = segment
-        vertices.append(a)
         vertex_edges[a].append(segment)
         vertex_edges[b].append(segment)
 
@@ -320,31 +356,116 @@ def triangulate(mouse, points):
             return (edge.other(p) - p).angle()
         edges.sort(key=key)
 
-    vertices.sort(key=second)
-    p = vertices[0]
-    edges = vertex_edges[p]
-    edge = edges[0]
-    def next_edge(edges, edge):
-        print("%d edges"%len(edges))
-        return edges[(edges.index(edge) + 1) % len(edges)]
+        # degree of each vertex must be even
+        assert(len(edges) & 1 == 0)
+    
+    def draw_edges(edges, p):
+        ab = edges[-1]
+        for i, cd in enumerate(edges):
+            a = ab.other(p)
+            b = cd.other(p)
+            radius = 30
+            draw_circle(p.polar((a - p).angle(), radius), 5, color='grey')
+            draw_circle(p.polar((b - p).angle(), radius), 5, color='grey')
+            arc = Arc(p, radius, a, b)
+            draw_arc(arc)
+            points = arc.points(5)
+            write(str(i), points[1])
+            ab = cd
 
-    draw_line(edge[0], edge[1], color='grey')
-    draw_circle(p, 5)
-    """
-    p = edge.other(p)
-    print(edge)
-    edge = next_edge(edges, edge)
-    print(edge)
-    draw_line(edge[0], edge[1], color='grey')
-    draw_circle(p, 5)
-    """
-    """
-    for _ in range(2):
-        draw_line(edge[0], edge[1], color='grey')
-        draw_circle(p, 5)
-        p = other(edge)
-        edge = next_edge(vertex_edges[p], edge)
-    """
+    if 0:
+        #p = Point(Fraction(12152225082, 25102391), Fraction(40686091, 166241))
+        p = Point(134, 514)
+        edges = vertex_edges[p]
+        for edge in vertex_edges[p]:
+            print(edge)
+        print(len(edges))
+    
+    def eat_face(debug):
+        points = (p for segment in segments for p in segment)
+        p = min(points, key=second)
+        start = p
+        edges = vertex_edges[p]
+        """
+        if debug:
+
+            print("start at", p)
+            for seg in segments:
+                print(seg)
+            for edge in edges:
+                print((edge.other(p) - p).angle(), edge)
+        """
+        edge = edges[0]
+
+        result = []
+
+        max_face_size = 50
+        for i in range(max_face_size):
+            #print("Current edge:", edge.i, edge)
+            # remove outgoing edge
+            #print("edges:", edges)
+            
+            remove_exactly(edges, edge)
+            remove_exactly(segments, edge)
+            result.append(p)
+
+            if debug and False:
+                draw_line(edge[0], edge[1], color='gray')
+                draw_circle(p, 5)
+                write(str(i), edge.middle())
+                #print(p, edge.other(p))
+
+            
+            p = edge.other(p)
+            edges = vertex_edges[p]
+            #print("new edges:", edges)
+            index = find_exactly(edges, edge)
+            assert(edges[index] is edge)
+            del edges[index]
+            
+            if p == start:
+                #print("Reached goal!")
+                break
+            
+            for j in range(len(edges)):
+                prev_edge = edges[index - j - 1]
+                if prev_edge != edge:
+                    #print("Found different edge: ", prev_edge.i, prev_edge)
+                    break
+            else:
+                raise Exception("Could not find previous edge of", edge, "in", edges)
+            # remove incomming edge
+            edge = prev_edge
+        else:
+            raise Exception("max_face_size reached")
+
+        return result
+
+    #for i in range(6):
+    while segments:
+        try:
+            points = eat_face(True if i == 666 else False)
+        except Exception as e:
+            traceback.print_exc()
+
+        draw_polygon(points)
+        
+        if i == 666:
+            for j, edge in enumerate(edges):
+                write(str(j), edge.middle())
+                draw_line(*edge)
+
+    if 0:
+        print("unconsumed segments:")
+        for segment in segments:
+            print(segment)
+    
+    if 1:
+        random.seed(1)
+        for i, segment in enumerate(segments):
+            draw_line(segment[0], segment[1], colors[i % len(colors)])
+
+    #print("done")
 
 import Tkinter as tk
 import random
@@ -363,7 +484,7 @@ with open("star.txt", "rb") as f:
 """
 random.seed(1)
 points = []
-while len(points) < 10:
+while len(points) < 5:
     x = random.randint(0, width)
     y = random.randint(0, height)
     p = Point(x, y)
@@ -382,14 +503,17 @@ def draw_grid(dx=100, dy=100, color='gray'):
         canvas.create_line(0, y, width, y, dash=(4, 4), fill=color)
 
 def write(text, p, color='white'):
-    canvas.create_text(p[0], p[1], text=text, fill=color)
+    canvas.create_text(float(p[0]), height - 1 - float(p[1]), text=text, fill=color)
 
-def draw_circle(center, radius, color='white', n = 100):
+def draw_circle(center, radius, color='white', n=100):
     a = center + Point(radius, 0)
     draw_arc(Arc(center, radius, a, a), color)
 
 def draw_line(a, b, color='white'):
-    canvas.create_line(float(a[0]), float(a[1]), float(b[0]), float(b[1]), fill=color)
+    canvas.create_line(float(a[0]), height - 1 - float(a[1]), float(b[0]), height - 1 - float(b[1]), fill=color)
+
+def lerp(a, b, u):
+    return (1 - u)*a + u*b
 
 def draw_arc(arc, color='white', n = 100):
     points = arc.points(n)
@@ -407,21 +531,13 @@ def flatten_once(values_values):
     return [value for values in values_values for value in values]
 
 def draw_polygon(points, color='white'):
-    xy = flatten_once((p.x, p.y) for p in points)
+    xy = flatten_once((float(p.x), height - 1 - float(p.y)) for p in points)
     canvas.create_polygon(xy, fill=color)
 
 def redraw(mouse=Point(width/2, height/2)):
     canvas.delete('all')
     canvas.create_rectangle(0, 0, width, height, fill='black')
     draw_grid()
-
-    """
-    random.seed(1)
-    a = points[-1]
-    for i, b in enumerate(points):
-        draw_line(a, b, random_hex_color())
-        a = b
-    """
 
     try:
         triangulate(mouse, points)
@@ -435,7 +551,7 @@ def argmin(values, key=identity):
     return min(enumerate(points), key=lambda x: key(x[1]))[0]
 
 def on_drag_left(event):
-    mouse = Point(event.x, event.y)
+    mouse = Point(event.x, height - 1 - event.y)
 
     closest = min(points, key=lambda p: mouse.dist(p))
     closest.is_now(mouse)
