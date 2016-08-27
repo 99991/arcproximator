@@ -70,8 +70,11 @@ g.text(j0.x - 10, j0.y + 10, r'$\mathbf{j}_0$', fontsize=20)
 g.text(j1.x + 10, j1.y - 0, r'$\mathbf{j}_1$', fontsize=20)
 g.text(a.x + a_tangent.x + 3, a.y + a_tangent.y + 3, r'$\mathbf{u}_0$', fontsize=20)
 g.text(b.x + b_tangent.x - 5, b.y + b_tangent.y + 5, r'$\mathbf{u}_1$', fontsize=20)
-g.text(a.x + 10, a.y - 5, r'$\mathbf{a}$', fontsize=20)
-g.text(b.x - 5, b.y - 20, r'$\mathbf{b}$', fontsize=20)
+g.text(a.x + 10, a.y - 5, r'$\mathbf{a}_0$', fontsize=20)
+g.text(b.x - 5, b.y - 20, r'$\mathbf{b}_1$', fontsize=20)
+
+plt.plot([center.x], [center.y], 'o', lw=1, color='gray', ms=10)
+g.text(center.x - 5, center.y - 20, r'$\mathbf{c}_2$', fontsize=20)
 
 g.arrow(a.x, a.y, a_tangent.x, a_tangent.y, head_width=5, head_length=5, fc='k', ec='k')
 g.arrow(b.x, b.y, b_tangent.x, b_tangent.y, head_width=5, head_length=5, fc='k', ec='k')
