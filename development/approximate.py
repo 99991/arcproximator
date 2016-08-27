@@ -59,11 +59,12 @@ curve = CubicBezier([
 def arc_from_points_and_normal(a, b, a_normal, clockwise):
     ba = b - a
     d = ba.dot(a_normal)
+    
     radius = ba.dot(ba)*0.5/d
-
+    
     center = a + radius*a_normal
-
-    return Arc(center, radius, a, b, clockwise)
+    
+    return Arc(center, a, b, clockwise)
 
 def subdivide(curve, max_err_squared, depth=10):
     p0, p1, p2, p3 = curve.points

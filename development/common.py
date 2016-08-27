@@ -8,6 +8,7 @@ import itertools
 import functools
 
 inf = float("inf")
+colors = ['#00ff00', '#ff0000', '#0000ff', '#ffff00', '#ff00ff', '#00ffff']
 
 def LINE():
     """Returns the current line number in our program."""
@@ -124,10 +125,8 @@ def remove_exactly(values, value):
 
 class Segment(tuple):
     
-    def __new__(typ, a, b, i=0):
-        segment = tuple.__new__(typ, (a, b))
-        segment.i = i
-        return segment
+    def __new__(typ, a, b):
+        return tuple.__new__(typ, (a, b))
 
     def other(self, p):
         a, b = self
@@ -139,12 +138,14 @@ class Segment(tuple):
 
 class Arc(object):
 
-    def __init__(self, center, radius, a, b, clockwise=False):
+    def __init__(self, center, a, b, clockwise=False):
         self.center = center
-        self.radius = radius
         self.a = a
         self.b = b
         self.clockwise = clockwise
+
+    def radius(self):
+        return self.a.dist(self.center)
 
     def sees(self, p):
         if self.clockwise:
@@ -182,7 +183,7 @@ class Arc(object):
     def clamp(self, p):
         a, b, c = self.a, self.b, self.center
         if self.encloses(p):
-            return c + (p - c).scaled(self.radius)
+            return c + (p - c).scaled(self.radius())
         else:
             if p.dist2(a) < p.dist2(b):
                 return a
@@ -190,7 +191,7 @@ class Arc(object):
                 return b
 
     def points(self, n):
-        a, b, center, radius = self.a, self.b, self.center, self.radius
+        a, b, center, radius = self.a, self.b, self.center, self.radius()
 
         a_angle = (a - center).angle()
         b_angle = (b - center).angle()

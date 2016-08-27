@@ -1,22 +1,21 @@
 from common import *
 
-def triangulate(mouse, points):
-    colors = ['#00ff00', '#ff0000', '#0000ff', '#ffff00', '#ff00ff', '#00ffff']
-    draw_polygon(points, '#222222')
-
-    def draw_segments(segments):
-        random.seed(1)
-        for i, segment in enumerate(segments):
-            color = colors[i % len(colors)]
-            write(str(i), segment.lerp(0.3), color)
-            draw_line(segment[0], segment[1], color)
+def draw_segments(segments):
+    random.seed(1)
+    for i, segment in enumerate(segments):
+        color = colors[i % len(colors)]
+        write(str(i), segment.lerp(0.3), color)
+        draw_line(segment[0], segment[1], color)
     
+def segments_from_points(points):
     segments = []
     a = points[-1]
     for b in points:
         segments.append(Segment(a, b))
         a = b
-    
+    return segments
+
+def handle_self_intersection(segments):
     split_points = [[] for _ in range(len(segments))]
 
     all_intersections = [Point(0, 0)]
@@ -30,12 +29,11 @@ def triangulate(mouse, points):
             split_points[i].extend(intersections)
             split_points[j].extend(intersections)
 
-    segments = split_things(segments, split_points, split_segment)
+    return split_things(segments, split_points, split_segment)
 
+def sweep(segments):
     new_segments = []
     split_points = [[] for _ in range(len(segments))]
-
-    t = time.clock()
     
     vertices = list(sorted(set(a for a, b in segments), key=second))
     vertices_with_same_y = itertools.groupby(vertices, second)
@@ -93,31 +91,69 @@ def triangulate(mouse, points):
                             draw_circle(b, 10, color=color)
                     a = b
 
-    dt = time.clock() - t
-    print(dt)
-
-    if 0:
-        draw_segments(segments)
-        return
-
     segments = split_things(segments, split_points, split_segment)
     
     segments.extend(new_segments)
-
-    # remove zero length segments
-    segments = [segment for segment in segments if segment[0].dist2(segment[1]) > 0]
-    for i in range(len(segments)):
-        segments[i].i = i
-
-    if 0:
-        draw_segments(segments)
     
+    return segments
+
+def remove_zero_length_segments(segments):
+    return [segment for segment in segments if segment[0].dist2(segment[1]) > 0]
+
+def eat_face(segments, vertex_edges, debug):
+    points = (p for segment in segments for p in segment)
+    p = min(points, key=second)
+    start = p
+    edges = vertex_edges[p]
+    
+    edge = edges[0]
+
+    result = []
+
+    max_face_size = 50
+    for i in range(max_face_size):
+        remove_exactly(edges, edge)
+        remove_exactly(segments, edge)
+        result.append(p)
+
+        if debug and False:
+            draw_line(edge[0], edge[1], color='gray')
+            draw_circle(p, 5)
+            write(str(i), edge.middle())
+
+        p0 = p
+        p = edge.other(p)
+        edges = vertex_edges[p]
+        index = find_exactly(edges, edge)
+        assert(edges[index] is edge)
+        del edges[index]
+        
+        if p == start:
+            #print("Reached goal!")
+            break
+
+        # find a previous edge that does not go back
+        for j in range(len(edges)):
+            prev_edge = edges[index - j - 1]
+            if prev_edge.other(p) != p0:
+                break
+        else:
+            raise Exception("Could not find previous edge of", edge, "in", edges)
+        # remove incomming edge
+        edge = prev_edge
+    else:
+        raise Exception("max_face_size reached")
+
+    return result
+
+def group_segments_by_vertex(segments):
     vertex_edges = defaultdict(list)
     for segment in segments:
         a, b = segment
         vertex_edges[a].append(segment)
         vertex_edges[b].append(segment)
 
+    # sort circular around vertex p
     for p, edges in vertex_edges.items():
         def key(edge):
             return (edge.other(p) - p).angle()
@@ -125,115 +161,40 @@ def triangulate(mouse, points):
 
         # degree of each vertex must be even
         assert(len(edges) & 1 == 0)
-    
-    def draw_edges(edges, p):
-        ab = edges[-1]
-        for i, cd in enumerate(edges):
-            a = ab.other(p)
-            b = cd.other(p)
-            radius = 30
-            draw_circle(p.polar((a - p).angle(), radius), 5, color='grey')
-            draw_circle(p.polar((b - p).angle(), radius), 5, color='grey')
-            arc = Arc(p, radius, a, b)
-            draw_arc(arc)
-            points = arc.points(5)
-            write(str(i), points[1])
-            ab = cd
 
-    if 0:
-        #p = Point(Fraction(12152225082, 25102391), Fraction(40686091, 166241))
-        p = Point(134, 514)
-        edges = vertex_edges[p]
-        for edge in vertex_edges[p]:
-            print(edge)
-        print(len(edges))
-    
-    def eat_face(debug):
-        points = (p for segment in segments for p in segment)
-        p = min(points, key=second)
-        start = p
-        edges = vertex_edges[p]
-        """
-        if debug:
+    return vertex_edges
 
-            print("start at", p)
-            for seg in segments:
-                print(seg)
-            for edge in edges:
-                print((edge.other(p) - p).angle(), edge)
-        """
-        edge = edges[0]
-
-        result = []
-
-        max_face_size = 50
-        for i in range(max_face_size):
-            #print("Current edge:", edge.i, edge)
-            # remove outgoing edge
-            #print("edges:", edges)
-            
-            remove_exactly(edges, edge)
-            remove_exactly(segments, edge)
-            result.append(p)
-
-            if debug and False:
-                draw_line(edge[0], edge[1], color='gray')
-                draw_circle(p, 5)
-                write(str(i), edge.middle())
-                #print(p, edge.other(p))
-
-            p0 = p
-            p = edge.other(p)
-            edges = vertex_edges[p]
-            #print("new edges:", edges)
-            index = find_exactly(edges, edge)
-            assert(edges[index] is edge)
-            del edges[index]
-            
-            if p == start:
-                #print("Reached goal!")
-                break
-
-            # find a previous edge that does not go back
-            for j in range(len(edges)):
-                prev_edge = edges[index - j - 1]
-                if prev_edge.other(p) != p0:
-                    break
-            else:
-                raise Exception("Could not find previous edge of", edge, "in", edges)
-            # remove incomming edge
-            edge = prev_edge
-        else:
-            raise Exception("max_face_size reached")
-
-        return result
-    
-    if 0:
-        draw_segments(segments)
-
+def unleash_face_eater(segments, vertex_edges):
     #for i in range(4):
     while segments:
         try:
-            points = eat_face(True if i == 666 else False)
+            points = eat_face(segments, vertex_edges, 0)
         except Exception as e:
             traceback.print_exc()
 
         draw_polygon(points)
         
-        if i == 666 or 0:
+        if 0:
             a = points[-1]
             for i, b in enumerate(points):
                 write(str(i), lerp(a, b, 0.3) + (b-a).scaled(20).left())
                 draw_line(a, b)
                 a = b
 
-    if 0:
-        print("unconsumed segments:")
-        for segment in segments:
-            print(segment)
-        draw_segments(segments)
+def triangulate(mouse, points):
+    draw_polygon(points, '#222222')
 
-    #print("done")
+    segments = segments_from_points(points)
+    
+    segments = handle_self_intersection(segments)
+
+    segments = sweep(segments)
+
+    segments = remove_zero_length_segments(segments)
+
+    vertex_edges = group_segments_by_vertex(segments)
+
+    unleash_face_eater(segments, vertex_edges)
 
 import Tkinter as tk
 import random
