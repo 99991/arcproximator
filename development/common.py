@@ -56,6 +56,9 @@ class Point(object):
     def __mul__(self, other):
         return Point(self[0]*other, self[1]*other)
 
+    def __neg__(self):
+        return Point(-self[0], -self[1])
+
     __rmul__ = __mul__
 
     def is_now(self, other):
@@ -206,33 +209,43 @@ class Arc(object):
 def intersect(seg_ab, seg_cd):
     a, b = seg_ab
     c, d = seg_cd
-
+    
     if a == c or a == d or b == c or b == d:
         # ignore segments with same endpoints
         return []
     
-    bax = b[0] - a[0]
-    bay = b[1] - a[1]
-    dcx = d[0] - c[0]
-    dcy = d[1] - c[1]
-
-    det = bax*dcy - bay*dcx
-
-    if det == 0: return []
+    ba = b - a
+    dc = d - c
+    ca = c - a
     
-    cax = c[0] - a[0]
-    cay = c[1] - a[1]
+    ba_det_dc = ba.det(dc)
+    ca_det_dc = ca.det(dc)
+    ca_det_ba = ca.det(ba)
 
-    inv_det = Fraction(1, det)
+    # parallel segments
+    if ba_det_dc == 0:
+        
+        if ca_det_dc == 0:
+            intersections = []
+            
+            ba2 = ba.dot(ba)
+            dc2 = dc.dot(dc)
+            
+            if 0 <= ba.dot(c - a) <= ba2: intersections.append(c)
+            if 0 <= ba.dot(d - a) <= ba2: intersections.append(d)
+            if 0 <= dc.dot(a - c) <= dc2: intersections.append(a)
+            if 0 <= dc.dot(b - c) <= dc2: intersections.append(b)
+            
+            return intersections
+        else:
+            # parallel, but not on same line
+            return []
 
-    t = (cax*bay - cay*bax)*inv_det
-    s = (cax*dcy - cay*dcx)*inv_det
+    t = Fraction(ca_det_ba, ba_det_dc)
+    s = Fraction(ca_det_dc, ba_det_dc)
 
     if t >= 0 and t <= 1 and s >= 0 and s <= 1:
-        qx = a[0] + s*bax
-        qy = a[1] + s*bay
-
-        return [Point(qx, qy)]
+        return [a + s*ba]
 
     return []
 

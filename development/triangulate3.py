@@ -19,8 +19,6 @@ def triangulate(mouse, points):
     
     split_points = [[] for _ in range(len(segments))]
 
-    # TODO split overlapping line segments properly
-
     all_intersections = [Point(0, 0)]
     for i in range(len(segments)):
         seg_ab = segments[i]
