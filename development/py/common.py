@@ -207,7 +207,7 @@ class Arc(object):
 
         return [center.polar(a_angle + i*delta, radius) for i in range(n)]
 
-def intersect(seg_ab, seg_cd):
+def intersect(seg_ab, seg_cd, frac=True):
     a, b = seg_ab
     c, d = seg_cd
     
@@ -242,9 +242,13 @@ def intersect(seg_ab, seg_cd):
             # parallel, but not on same line
             return []
 
-    t = Fraction(ca_det_ba, ba_det_dc)
-    s = Fraction(ca_det_dc, ba_det_dc)
-
+    if frac:
+        t = Fraction(ca_det_ba, ba_det_dc)
+        s = Fraction(ca_det_dc, ba_det_dc)
+    else:
+        t = ca_det_ba/ba_det_dc
+        s = ca_det_dc/ba_det_dc
+        
     if t >= 0 and t <= 1 and s >= 0 and s <= 1:
         return [a + s*ba]
 
@@ -369,3 +373,8 @@ def random_hex_color():
 
 def flatten_once(values_values):
     return [value for values in values_values for value in values]
+
+def make_xy(points):
+    x = [p.x for p in points]
+    y = [p.y for p in points]
+    return [x, y]
