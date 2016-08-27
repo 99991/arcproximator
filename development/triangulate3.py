@@ -7,7 +7,9 @@ def triangulate(mouse, points):
     def draw_segments(segments):
         random.seed(1)
         for i, segment in enumerate(segments):
-            draw_line(segment[0], segment[1], colors[i % len(colors)])
+            color = colors[i % len(colors)]
+            write(str(i), segment.lerp(0.3), color)
+            draw_line(segment[0], segment[1], color)
     
     segments = []
     a = points[-1]
@@ -24,6 +26,7 @@ def triangulate(mouse, points):
         seg_ab = segments[i]
         for j in range(i+1, len(segments)):
             seg_cd = segments[j]
+            
             intersections = intersect(seg_ab, seg_cd)
             
             split_points[i].extend(intersections)
@@ -34,28 +37,25 @@ def triangulate(mouse, points):
     new_segments = []
     split_points = [[] for _ in range(len(segments))]
 
-    # TODO handle case with overlapping sweep lines
-
     t = time.clock()
     
     vertices = list(sorted(set(a for a, b in segments), key=second))
+    vertices_with_same_y = itertools.groupby(vertices, second)
 
-    if 1:
+    if 0:
         draw_segments(segments)
     
-    for c in vertices:
+    for y, group in vertices_with_same_y:
         intersections = []
-        
-        for i in range(len(segments)):
-            
-            seg_ab = segments[i]
+
+        for i, seg_ab in enumerate(segments):
             a, b = seg_ab
             
             # ignore horizontal segments
             if a.y == b.y:
                 continue
             
-            for intersection in sweep_intersect(c.y, seg_ab):
+            for intersection in sweep_intersect(y, seg_ab):
                 # segments are half-open
                 # so we ignore the upper segment point
                 if intersection.y == max(a.y, b.y):
@@ -63,36 +63,46 @@ def triangulate(mouse, points):
 
                 intersections.append((intersection, i))
 
-        left  = [(p, i) for p, i in intersections if p.x < c.x]
-        right = [(p, i) for p, i in intersections if p.x > c.x]
-        
-        if len(left) & 1:
-            p, i = max(left)
-            #draw_line(c, p)
-            new_segments.append(Segment(p, c))
-            new_segments.append(Segment(c, p))
-            split_points[i].append(p)
-        
-        if len(right) & 1:
-            p, i = min(right)
-            #draw_line(c, p)
-            new_segments.append(Segment(p, c))
-            new_segments.append(Segment(c, p))
-            split_points[i].append(p)
+        intersections.sort(key=first)
+        group = sorted(group, key=first)
+
+        if 0:
+            next_color = itertools.cycle(colors)
+            for s, i in intersections:
+                print(s)
+                write(str(i), s)
+            print("")
+
+        for p, q in zip(intersections[0::2], intersections[1::2]):
+            a, i = p
+            b, j = q
+            between = [p for p in group if a.x <= p.x <= b.x]
+            if between and a != b:
+                split_points[i].append(a)
+                split_points[j].append(b)
+                points = [a] + between + [b]
+                for a, b in zip(points, points[1:]):
+                    ab = Segment(a, b)
+                    ba = Segment(b, a)
+                    if ab not in segments and ba not in segments:
+                        new_segments.append(ab)
+                        new_segments.append(ba)
+
+                        if 0:
+                            color = next(next_color)
+                            draw_line(a, b, color=color)
+                            draw_circle(a, 5, color=color)
+                            draw_circle(b, 10, color=color)
+                    a = b
 
     dt = time.clock() - t
     print(dt)
 
     if 0:
-        for i, segment in enumerate(new_segments):
-            color = colors[i%len(colors)]
-            write(str(i), segment.lerp(0.1), color=color)
-            draw_line(*segment, color=color)
+        draw_segments(segments)
+        return
 
     segments = split_things(segments, split_points, split_segment)
-
-    if 0:
-        draw_segments(segments)
     
     segments.extend(new_segments)
 
@@ -101,6 +111,9 @@ def triangulate(mouse, points):
     for i in range(len(segments)):
         segments[i].i = i
 
+    if 0:
+        draw_segments(segments)
+    
     vertex_edges = defaultdict(list)
     for segment in segments:
         a, b = segment
@@ -171,7 +184,7 @@ def triangulate(mouse, points):
                 write(str(i), edge.middle())
                 #print(p, edge.other(p))
 
-            
+            p0 = p
             p = edge.other(p)
             edges = vertex_edges[p]
             #print("new edges:", edges)
@@ -182,11 +195,11 @@ def triangulate(mouse, points):
             if p == start:
                 #print("Reached goal!")
                 break
-            
+
+            # find a previous edge that does not go back
             for j in range(len(edges)):
                 prev_edge = edges[index - j - 1]
-                if prev_edge != edge:
-                    #print("Found different edge: ", prev_edge.i, prev_edge)
+                if prev_edge.other(p) != p0:
                     break
             else:
                 raise Exception("Could not find previous edge of", edge, "in", edges)
@@ -199,20 +212,20 @@ def triangulate(mouse, points):
     
     if 0:
         draw_segments(segments)
-    
-    #for i in range(6):
+
+    #for i in range(4):
     while segments:
         try:
             points = eat_face(True if i == 666 else False)
         except Exception as e:
             traceback.print_exc()
 
-        #draw_polygon(points)
+        draw_polygon(points)
         
-        if i == 666 or 1:
+        if i == 666 or 0:
             a = points[-1]
             for i, b in enumerate(points):
-                write(str(i), lerp(a, b, 0.1))
+                write(str(i), lerp(a, b, 0.3) + (b-a).scaled(20).left())
                 draw_line(a, b)
                 a = b
 
@@ -220,8 +233,6 @@ def triangulate(mouse, points):
         print("unconsumed segments:")
         for segment in segments:
             print(segment)
-    
-    if 1:
         draw_segments(segments)
 
     #print("done")
@@ -239,7 +250,7 @@ with open("star.txt", "rb") as f:
     xy = list(map(float, s.split()))
     xs = xy[0::2]
     ys = xy[1::2]
-    points = [Point(x, y) for x, y in zip(xs, ys)]
+    points = [Point(Fraction(x), Fraction(y)) for x, y in zip(xs, ys)]
 
 xy = [
     100, 100,
@@ -254,7 +265,7 @@ xy = [
 ]
 xs = xy[0::2]
 ys = xy[1::2]
-points = [Point(x, y) for x, y in zip(xs, ys)]
+#points = [Point(x, y) for x, y in zip(xs, ys)]
 """
 random.seed(1)
 points = []
