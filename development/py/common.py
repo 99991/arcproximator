@@ -262,9 +262,26 @@ def arc_from_points(a, b, c):
 
     center = 0.5/denominator * p.left()
     
-    radius = (a - center).length()
+    return Arc(center, a, c, b.is_left_of(a, c))
+
+def arc_from_points_and_normal(a, b, a_normal, clockwise):
+    ba = b - a
+    d = ba.dot(a_normal)
     
-    return Arc(center, radius, a, c, b.is_left_of(a, c))
+    radius = ba.dot(ba)*0.5/d
+    
+    center = a + radius*a_normal
+    
+    return Arc(center, a, b, clockwise)
+
+def rotation_and_center(a, b, tangent0, tangent1):
+    co = tangent0.dot(tangent1)
+    si = tangent0.det(tangent1)
+
+    x = (a.x + b.x - si*(a.y - b.y)/(1.0 + co))*0.5
+    y = (a.y + b.y + si*(a.x - b.x)/(1.0 + co))*0.5
+
+    return (co, si, Point(x, y))
 
 def swap(values, i, j):
     temp = values[i]
@@ -301,7 +318,7 @@ def split_things(things, split_points, split_func):
 
 def intersect_segment_circle(segment, circle):
     center = circle.center
-    radius = circle.radius
+    radius = circle.radius()
     a, b = segment
     
     ba = b - a

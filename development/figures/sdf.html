@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <script type="text/javascript" src="gl-matrix-min.js"></script>
+
+    <style type="text/css">
+        hml, body, div, canvas {
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+    
+    <script id="myvertexshader" type="x-shader/x-vertex">
+    attribute vec4 apos;
+    attribute vec2 atex;
+
+    uniform mat4 umvp;
+
+    varying vec2 vtex;
+
+    void main(){
+        vtex = atex;
+        gl_Position = umvp * apos;
+    }
+    </script>
+
+    <script id="myfragmentshader" type="x-shader/x-fragment">
+    precision highp float;
+    
+    #extension GL_OES_standard_derivatives : enable
+    
+    varying vec2 vtex;
+    
+    uniform sampler2D utex0;
+
+    void main(){
+		float c = texture2D(utex0, vtex).r;
+		c = smoothstep(0.5 - fwidth(c), 0.5, c);
+		gl_FragColor = vec4(c, c, c, 1.0);
+    }
+    </script>
+</head>
+
+<body>
+    <canvas id="webgl-canvas" style="border: none;" width="512" height="512"></canvas>
+</body>
+
+<script type="text/javascript">
+"use strict";
+var canvas = document.getElementById("webgl-canvas");
+var gl = canvas.getContext("webgl");
+var mvp = mat4.create();
+
+gl.getExtension('OES_standard_derivatives');
+gl.getExtension('OES_texture_float');
+
+gl.clearColor(0.1, 0.2, 0.3, 1.0);
+gl.clear(gl.COLOR_BUFFER_BIT);
+
+function makeShader(id, shaderType){
+    var shaderNodes = document.getElementById(id);
+    
+    var source = "";
+    for (var node = shaderNodes.firstChild; node; node = node.nextSibling){
+        if (node.nodeType == 3) {
+            source += node.textContent;
+        }
+    }
+    
+    var shader = gl.createShader(shaderType);
+    
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)){
+        alert(gl.getShaderInfoLog(shader));
+    }
+    
+    return shader;
+}
+
+function makeTexture(path){
+    var texture = gl.createTexture();
+    var image = new Image();
+    texture.image = image;
+    
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    
+    // fill texture with some recognizable pattern so we know it has not loaded yet
+    var width = 64;
+    var height = 64;
+    
+    var pixels = new Uint8Array(width*height*4);
+    for (var i = 0; i < width*height*4; i += 4){
+        var c = Math.random() * 255;
+        pixels[i + 0] = c;
+        pixels[i + 1] = c;
+        pixels[i + 2] = c;
+        pixels[i + 3] = 255;
+    }
+    
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+	gl.generateMipmap(gl.TEXTURE_2D)
+    
+    // eventually load texture from path
+    image.onload = function (){
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+		gl.generateMipmap(gl.TEXTURE_2D)
+    }
+    image.src = path;
+    
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    return texture;
+}
+
+
+var vertexShader   = makeShader("myvertexshader"  , gl.VERTEX_SHADER);
+var fragmentShader = makeShader("myfragmentshader", gl.FRAGMENT_SHADER);
+
+var shaderProgram = gl.createProgram();
+gl.attachShader(shaderProgram, vertexShader);
+gl.attachShader(shaderProgram, fragmentShader);
+gl.linkProgram(shaderProgram);
+if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)){
+    alert("Could not initialise shaders");
+}
+gl.useProgram(shaderProgram);
+
+var apos      = gl.getAttribLocation (shaderProgram, "apos");
+var atex      = gl.getAttribLocation (shaderProgram, "atex");
+var umvp      = gl.getUniformLocation(shaderProgram, "umvp");
+var utex0     = gl.getUniformLocation(shaderProgram, "utex0");
+
+var texture = makeTexture("sdf_16x16.png");
+
+var vbo = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+
+gl.enable(gl.BLEND);
+gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+var mouse = {x:0.0, y:0.0};
+
+function onDraw(){
+    var width = canvas.width;
+    var height = canvas.height;
+    
+    var vertices = new Float32Array([
+            0,      0, 0, 0,
+        width,      0, 1, 0,
+        width, height, 1, 1,
+            0,      0, 0, 0,
+        width, height, 1, 1,
+            0, height, 0, 1,
+    ]);
+    /*
+    for (var i = 0; i < vertices.length; i += 4){
+        vertices[i + 0] += mouse.x;
+        vertices[i + 1] += mouse.y;
+    }
+    */
+    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    mat4.ortho(mvp, 0.0, width, 0.0, height, -1, +1);
+    gl.uniformMatrix4fv(umvp, false, mvp);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+    gl.enableVertexAttribArray(apos);
+    gl.enableVertexAttribArray(atex);
+    gl.vertexAttribPointer(apos, 2, gl.FLOAT, false, 4*4, 0*4);
+    gl.vertexAttribPointer(atex, 2, gl.FLOAT, false, 4*4, 2*4);
+
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.uniform1i(utex0, 0);
+
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    
+    window.requestAnimationFrame(onDraw);
+}
+
+window.onmousemove = function(e){
+    mouse.x = e.clientX;
+    mouse.y = canvas.height - 1 - e.clientY;
+}
+
+onDraw();
+
+</script>
+
+</html>

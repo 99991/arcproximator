@@ -56,32 +56,16 @@ curve = CubicBezier([
     Point(300, 100),
 ])
 
-def arc_from_points_and_normal(a, b, a_normal, clockwise):
-    ba = b - a
-    d = ba.dot(a_normal)
-    
-    radius = ba.dot(ba)*0.5/d
-    
-    center = a + radius*a_normal
-    
-    return Arc(center, a, b, clockwise)
-
 def subdivide(curve, max_err_squared, depth=10):
     p0, p1, p2, p3 = curve.points
     p10 = p1 - p0
     p21 = p2 - p1
     p23 = p2 - p3
-    
+
     tangent0 = p10.normalized()
     tangent1 = p23.normalized()
 
-    co = tangent0.dot(tangent1)
-    si = tangent0.det(tangent1)
-
-    x = (p0.x + p3.x - si*(p0.y - p3.y)/(1.0 + co))*0.5
-    y = (p0.y + p3.y + si*(p0.x - p3.x)/(1.0 + co))*0.5
-
-    center = Point(x, y)
+    co, si, center = rotation_and_center(p0, p3, tangent0, tangent1)
     radius = p0.dist(center)
 
     join = curve.at(0.5)

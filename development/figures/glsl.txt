@@ -1,0 +1,24 @@
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+#extension GL_OES_standard_derivatives : enable
+
+uniform float time;
+uniform vec2 mouse;
+uniform vec2 resolution;
+
+void main(){
+	// position of the pixel on the screen
+	vec2 position = gl_FragCoord.xy;
+
+	float radius = 128.0;
+	vec2 center = vec2(256.0, 256.0);
+	
+	// if the pixel is within some distance to a center, color it
+	if (distance(position, center) < radius){
+		gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0); // white
+	}else{
+		gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0); // black
+	}
+}
