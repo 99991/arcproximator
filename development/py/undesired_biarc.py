@@ -60,27 +60,21 @@ def draw_from_join(j, cw0, cw1, ls):
 j0 = center.polar(pi*0.5, radius)
 j1 = center.polar(pi*1.9, radius)
 
-draw_from_join(j0, False, False, 'dashed')
-#draw_from_join(j1, True, True, 'dotted')
+#draw_from_join(j0, False, False, 'dashed')
+draw_from_join(j1, True, True, 'dashed')
 
 a_tangent = a_tangent.scaled(tangent_length)
 b_tangent = b_tangent.scaled(tangent_length)
 
-g.text(j0.x - 10, j0.y + 10, r'$\mathbf{j}_0$', fontsize=20)
-#g.text(j1.x + 10, j1.y - 0, r'$\mathbf{j}_1$', fontsize=20)
+#g.text(j0.x - 10, j0.y + 10, r'$\mathbf{j}_0$', fontsize=20)
+g.text(j1.x + 10, j1.y - 0, r'$\mathbf{j}_1$', fontsize=20)
 g.text(a.x + a_tangent.x + 3, a.y + a_tangent.y + 3, r'$\mathbf{u}_0$', fontsize=20)
 g.text(b.x + b_tangent.x - 5, b.y + b_tangent.y + 5, r'$\mathbf{u}_1$', fontsize=20)
 g.text(a.x + 10, a.y - 5, r'$\mathbf{a}_0$', fontsize=20)
 g.text(b.x - 5, b.y - 20, r'$\mathbf{b}_1$', fontsize=20)
-<<<<<<< HEAD
 g.text(center.x - 5, center.y - 20, r'$\mathbf{c}_2$', fontsize=20)
 
 plt.plot([a.x, b.x, center.x], [a.y, b.y, center.y], 'o', lw=1, color='gray', ms=10)
-=======
-
-plt.plot([center.x], [center.y], 'o', lw=1, color='gray', ms=10)
-g.text(center.x - 5, center.y - 20, r'$\mathbf{c}_2$', fontsize=20)
->>>>>>> c78d6c773b440e95b0d7043e538d790a30e8d03f
 
 g.arrow(a.x, a.y, a_tangent.x, a_tangent.y, head_width=5, head_length=5, fc='k', ec='k')
 g.arrow(b.x, b.y, b_tangent.x, b_tangent.y, head_width=5, head_length=5, fc='k', ec='k')
@@ -99,48 +93,6 @@ commands = [
     Path.CURVE4,
 ]
 
-g.annotate(
-    'Bézier curve'.decode("utf-8"),
-    xy=(6, 10),
-    xycoords='data',
-    xytext=(75, -65),
-    textcoords='data',
-    size=15,
-    # bbox=dict(boxstyle="round", fc="0.8"),
-    arrowprops=dict(arrowstyle="simple",
-        fc="0.6", ec="none",
-        connectionstyle="arc3,rad=-0.4"
-    ),
-)
-
-g.annotate(
-    r'$\mathbf{A}_0$',
-    xy=(20, 45),
-    xycoords='data',
-    xytext=(-30, 75),
-    textcoords='data',
-    size=15,
-    # bbox=dict(boxstyle="round", fc="0.8"),
-    arrowprops=dict(arrowstyle="simple",
-        fc="0.6", ec="none",
-        connectionstyle="arc3,rad=-0.4"
-    ),
-)
-
-g.annotate(
-    r'$\mathbf{A}_1$',
-    xy=(-25, 14),
-    xycoords='data',
-    xytext=(-70, 65),
-    textcoords='data',
-    size=15,
-    # bbox=dict(boxstyle="round", fc="0.8"),
-    arrowprops=dict(arrowstyle="simple",
-        fc="0.6", ec="none",
-        connectionstyle="arc3,rad=0.2"
-    ),
-)
-
 path = Path(control_points, commands)
 patch = patches.PathPatch(path, facecolor='none')
 g.add_patch(patch)
@@ -155,4 +107,4 @@ g.xaxis.set_visible(False)
 g.yaxis.set_visible(False)
 
 #plt.show()
-plt.savefig("biarc_construction.pdf", bbox_inches="tight")
+plt.savefig("undesired_biarc.pdf", bbox_inches="tight")
