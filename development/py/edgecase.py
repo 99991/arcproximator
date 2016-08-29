@@ -28,48 +28,23 @@ def draw_arc(arc, ls):
     #g.add_patch(patches.Arc(arc.center, 5, 5, 0.0, 0, 360))
 
 center = Point(0, 0)
-radius = 50
+radius = 100
 
 a_angle = pi*0.0
-b_angle = pi*0.9
+b_angle = pi*0.5
 tangent_length = 70
 
 a = center.polar(a_angle, radius)
 b = center.polar(b_angle, radius)
 
-a_tangent = Point(+1, +2).normalized()
-b_tangent = Point(-2, +1).normalized()
+a_tangent = Point(0, 1).normalized()
+b_tangent = Point(-1, 0).normalized()
 
 _, _, center = rotation_and_center(a, b, a_tangent, -b_tangent)
 radius = center.dist(a)
 circle = patches.Arc(center, radius*2, radius*2, 0.0, 0, 360)
 g.add_patch(circle)
 
-def draw_from_join(j, cw0, cw1, ls):
-    a_normal = a_tangent.left()
-    b_normal = b_tangent.right()
-
-    arc0 = arc_from_points_and_normal(a, j, a_normal, cw0)
-    arc1 = arc_from_points_and_normal(b, j, b_normal, cw1)
-
-    plt.plot([j.x], [j.y], 'o', lw=1, color='gray', ms=10)
-
-    draw_arc(arc0, ls)
-    draw_arc(arc1, ls)
-
-j0 = center.polar(pi*0.5, radius)
-j1 = center.polar(pi*1.9, radius)
-
-draw_from_join(j0, False, False, 'dashed')
-#draw_from_join(j1, True, True, 'dotted')
-
-a_tangent = a_tangent.scaled(tangent_length)
-b_tangent = b_tangent.scaled(tangent_length)
-
-g.text(j0.x - 10, j0.y + 10, r'$\mathbf{j}_0$', fontsize=20)
-#g.text(j1.x + 10, j1.y - 0, r'$\mathbf{j}_1$', fontsize=20)
-g.text(a.x + a_tangent.x + 3, a.y + a_tangent.y + 3, r'$\mathbf{u}_0$', fontsize=20)
-g.text(b.x + b_tangent.x - 5, b.y + b_tangent.y + 5, r'$\mathbf{u}_1$', fontsize=20)
 g.text(a.x + 10, a.y - 5, r'$\mathbf{a}_0$', fontsize=20)
 g.text(b.x - 5, b.y - 20, r'$\mathbf{b}_1$', fontsize=20)
 
@@ -80,8 +55,32 @@ plt.plot([a.x, b.x, center.x], [a.y, b.y, center.y], 'o', lw=1, color='gray', ms
 plt.plot([center.x], [center.y], 'o', lw=1, color='gray', ms=10)
 g.text(center.x - 5, center.y - 20, r'$\mathbf{c}_2$', fontsize=20)
 
+a_tangent = tangent_length * a_tangent
+b_tangent = tangent_length * b_tangent
+
 g.arrow(a.x, a.y, a_tangent.x, a_tangent.y, head_width=5, head_length=5, fc='k', ec='k')
 g.arrow(b.x, b.y, b_tangent.x, b_tangent.y, head_width=5, head_length=5, fc='k', ec='k')
+
+g.text(a.x + a_tangent.x + 3, a.y + a_tangent.y + 3, r'$\mathbf{u}_0$', fontsize=20)
+g.text(b.x + b_tangent.x - 5, b.y + b_tangent.y + 5, r'$\mathbf{u}_1$', fontsize=20)
+
+def draw_segment(segment):
+    a, b = segment
+    plt.plot([a.x, b.x], [a.y, b.y])
+
+def bisector(a, b):
+    ba = b - a
+    middle = a + 0.5*ba
+    #draw_segment(Segment(a, b))
+    seg = Segment(middle - ba.left(), middle + ba.left())
+    #draw_segment(seg)
+    return seg
+
+seg0 = bisector(a, b)
+seg1 = bisector(a + a_tangent, b + b_tangent)
+
+intersections = intersect(seg0, seg1, False)
+print(intersections, center)
 
 control_points = [(p.x, p.y) for p in [
     a,
@@ -97,60 +96,18 @@ commands = [
     Path.CURVE4,
 ]
 
-g.annotate(
-    'Bézier curve'.decode("utf-8"),
-    xy=(6, 10),
-    xycoords='data',
-    xytext=(75, -65),
-    textcoords='data',
-    size=15,
-    # bbox=dict(boxstyle="round", fc="0.8"),
-    arrowprops=dict(arrowstyle="simple",
-        fc="0.6", ec="none",
-        connectionstyle="arc3,rad=-0.4"
-    ),
-)
-
-g.annotate(
-    r'$\mathbf{A}_0$',
-    xy=(20, 45),
-    xycoords='data',
-    xytext=(-30, 75),
-    textcoords='data',
-    size=15,
-    # bbox=dict(boxstyle="round", fc="0.8"),
-    arrowprops=dict(arrowstyle="simple",
-        fc="0.6", ec="none",
-        connectionstyle="arc3,rad=-0.4"
-    ),
-)
-
-g.annotate(
-    r'$\mathbf{A}_1$',
-    xy=(-25, 14),
-    xycoords='data',
-    xytext=(-70, 65),
-    textcoords='data',
-    size=15,
-    # bbox=dict(boxstyle="round", fc="0.8"),
-    arrowprops=dict(arrowstyle="simple",
-        fc="0.6", ec="none",
-        connectionstyle="arc3,rad=0.2"
-    ),
-)
-
 path = Path(control_points, commands)
-patch = patches.PathPatch(path, facecolor='none')
+patch = patches.PathPatch(path, facecolor='none', ls='dashed')
 g.add_patch(patch)
 xs = [x for x, _ in control_points]
 ys = [y for _, y in control_points]
 #g.plot(xs, ys, 'o--', lw=1, color='gray', ms=10)
 
-g.set_xlim(-150, 200)
-g.set_ylim(-140, 100)
+g.set_xlim(-150, 180)
+g.set_ylim(-150, 180)
 g.set_aspect(1)
 g.xaxis.set_visible(False)
 g.yaxis.set_visible(False)
 
-#plt.show()
-plt.savefig("biarc_construction.pdf", bbox_inches="tight")
+plt.show()
+#plt.savefig("edgecase.pdf", bbox_inches="tight")

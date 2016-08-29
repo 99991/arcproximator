@@ -6,6 +6,7 @@ import math
 import inspect
 import itertools
 import functools
+from math import sin, cos, pi, sqrt
 
 inf = float("inf")
 colors = ['#00ff00', '#ff0000', '#0000ff', '#ffff00', '#ff00ff', '#00ffff']
@@ -93,6 +94,9 @@ class Point(object):
     def dist2(self, other):
         return (self - other).length2()
     
+    def dist_squared(self, other):
+        return (self - other).length2()
+    
     def dist(self, other):
         return (self - other).length()
 
@@ -110,32 +114,106 @@ class Point(object):
 
     def __str__(self):
         x, y = self.x, self.y
-        return "(%f, %f, (%s, %s))"%(float(x), float(y), str(x), str(y))
+        return "Pnt(%s, %s)"%(str(x), str(y))
     
     __repr__ = __str__
-
-def find_exactly(values, value):
-    for i, other in enumerate(values):
-        if value is other:
-            return i
-    raise ValueError("Could not find", value, "in", values)
-
-def remove_exactly(values, value):
-    del values[find_exactly(values, value)]
-
-class Segment(tuple):
     
-    def __new__(typ, a, b):
-        return tuple.__new__(typ, (a, b))
+    def quadrant(self):
+        if self.y > 0:
+            if self.x > 0: return 0
+            else: return 1
+        else:
+            if self.x < 0: return 2
+            return 3
 
+class Segment(object):
+
+    def __init__(self, a, b):
+        self.a = a
+        self.b = b
+
+    def __iter__(self):
+        yield self.a
+        yield self.b
+        raise StopIteration
+    
     def other(self, p):
         a, b = self
-        return a if a != p else b
+        if a == p: return b
+        if b == p: return a
+        raise ValueError("%s must be endpoint of %s"%(str(p), str(self)))
+
+    def endpoints(self):
+        a, b = self
+        return (a, b)
 
     def lerp(self, u=0.5):
         a, b = self
         return lerp(a, b, u)
 
+    def split_at_points(self, points, segments):
+        a, b = self
+        ba = b - a
+        ba2 = ba.dot(ba)
+        def pseudo_dist_along_line(p):
+            return ba.dot(p - a)
+        points.sort(key=pseudo_dist_along_line)
+        def on_line(p):
+            d = pseudo_dist_along_line(p)
+            return d > 0 and d < ba2
+    
+        points = list(filter(on_line, points))
+        points.append(b)
+        for b in points:
+            segments.append(Segment(a, b))
+            a = b
+
+    def length_squared(self):
+        a, b = self
+        return a.dist_squared(b)
+
+    def intersections_horizontal(self, p):
+        a, b = self
+    
+        if p.y < min(a.y, b.y) or p.y > max(a.y, b.y): return [[], [], []]
+
+        if a.y == b.y: return [[], [], []]
+
+        x = a.x + (p.y - a.y)*(a.x - b.x)/(a.y - b.y)
+        
+        q = Point(x, p.y)
+
+        if x < p.x: return [[q], [], []]
+        if x > p.x: return [[], [], [q]]
+        return [[], [q], []]
+
+    def __reversed__(self):
+        b, a = self
+        return Segment(a, b)
+
+    def left_oriented(self):
+        a, b = self
+        if a.x < b.x: return self
+        return Segment(b, a)
+
+    def points(self, n):
+        a, b = self
+        return [lerp(a, b, 1.0/(n-1)*i) for i in range(n)]
+
+    def set_endpoints(self, a, b):
+        self.a = a
+        self.b = b
+
+    def tangent_vector(self, p):
+        q = self.other(p)
+        return q - p
+    
+    def __str__(self):
+        a, b = self
+        return "Seg(%s, %s)"%(str(a), str(b))
+    
+    __repr__ = __str__
+    
 class Arc(object):
 
     def __init__(self, center, a, b, clockwise=False):
@@ -143,6 +221,36 @@ class Arc(object):
         self.a = a
         self.b = b
         self.clockwise = clockwise
+
+    def endpoints(self):
+        return (self.a, self.b)
+
+    def set_endpoints(self, a, b):
+        self.a = a
+        self.b = b
+
+    def other(self, p):
+        a, b = self.a, self.b
+        if a == p: return b
+        if b == p: return a
+        raise ValueError("%s must be endpoint of %s"%(str(p), str(self)))
+
+    def tangent_vector(self, p):
+        a, b, c = self.a, self.b, self.center
+        if a == p:
+            if self.clockwise:
+                return (p - c).right()
+            else:
+                return (p - c).left()
+        if b == p:
+            if self.clockwise:
+                return (p - c).left()
+            else:
+                return (p - c).right()
+        raise ValueError("%s must be endpoint of %s"%(str(p), str(self)))
+    
+    def length_squared(self):
+        return self.b.x - self.a.x
 
     def radius(self):
         return self.a.dist(self.center)
@@ -153,11 +261,16 @@ class Arc(object):
         else:
             return p.is_right_of(self.a, self.b)
 
-    def reverse(self):
-        a, b = self.a, self.b
-        self.a = b
-        self.b = a
-        self.clockwise = not self.clockwise
+    def __reversed__(self):
+        b, a = self.a, self.b
+        return Arc(self.center, a, b, not self.clockwise)
+
+    def left_oriented(self):
+        if self.a.x < self.b.x:
+            return self
+        else:
+            return reversed(self)
+        
     """
     def is_over_180(self):
         if self.clockwise:
@@ -207,6 +320,100 @@ class Arc(object):
 
         return [center.polar(a_angle + i*delta, radius) for i in range(n)]
 
+    def get_x_monotone_split_points(self, qa, qb, left, right, a, b):
+        if self.clockwise:
+            if qa == 0:
+                if qb == 0: return [right, left] if a.y < b.y else []
+                if qb == 1: return [right, left]
+                if qb == 2: return [right]
+                if qb == 3: return [right]
+            if qa == 1:
+                if qb == 0: return []
+                if qb == 1: return [right, left] if a.x >= b.y else []
+                if qb == 2: return [right]
+                if qb == 3: return [right]
+            if qa == 2:
+                if qb == 0: return [left]
+                if qb == 1: return [left]
+                if qb == 2: return [left, right] if a.y >= b.y else []
+                if qb == 3: return [left, right]
+            if qa == 3:
+                if qb == 0: return [left]
+                if qb == 1: return [left]
+                if qb == 2: return []
+                if qb == 3: return [left, right] if a.y <= b.y else []
+        else:
+            if qa == 0:
+                if qb == 0: return [left, right] if a.y >= b.y else []
+                if qb == 1: return []
+                if qb == 2: return [left]
+                if qb == 3: return [left]
+            if qa == 1:
+                if qb == 0: return [left, right]
+                if qb == 1: return [left, right] if a.y <= b.y else []
+                if qb == 2: return [left]
+                if qb == 3: return [left]
+            if qa == 2:
+                if qb == 0: return [right]
+                if qb == 1: return [right]
+                if qb == 2: return [right, left] if a.y <= b.y else []
+                if qb == 3: return []
+            if qa == 3:
+                if qb == 0: return [right]
+                if qb == 1: return [right]
+                if qb == 2: return [right, left]
+                if qb == 3: return [right, left] if a.y >= b.y else []
+
+    def split_x_monotone(self, arcs):
+        a, b, c, radius = self.a, self.b, self.center, self.radius()
+        
+        left = Point(c.x - radius, c.y)
+        right = Point(c.x + radius, c.y)
+        
+        qa = (a - c).quadrant()
+        qb = (b - c).quadrant()
+        points = self.get_x_monotone_split_points(qa, qb, left, right, a, b)
+        points = [p for p in points if p != a and p != b]
+        points.append(b)
+        for b in points:
+            arcs.append(Arc(c, a, b, self.clockwise))
+            a = b
+
+    def split_at_points(self, points, arcs):
+        points.sort(key=first)
+        a, b, c = self.a, self.b, self.center
+        points = [p for p in points if a.x < p.x < b.x]
+        points.append(b)
+        for b in points:
+            if a != b:
+                arcs.append(Arc(c, a, b, self.clockwise))
+            a = b
+        
+    def intersections_horizontal(self, p):
+        a, b, c = self.a, self.b, self.center
+        r2 = a.dist2(c)
+
+        dy = p.y - c.y
+        if dy*dy > r2:
+            return []
+
+        return []
+
+    def __str__(self):
+        a, b, c = self.a, self.b, self.center
+        return "Arc(%s, %s, %s)"%(str(c), str(a), str(b))
+    
+    __repr__ = __str__
+
+def find_exactly(values, value):
+    for i, other in enumerate(values):
+        if value is other:
+            return i
+    raise ValueError("Could not find", value, "in", values)
+
+def remove_exactly(values, value):
+    del values[find_exactly(values, value)]
+    
 def intersect(seg_ab, seg_cd, frac=True):
     a, b = seg_ab
     c, d = seg_cd
@@ -378,3 +585,17 @@ def make_xy(points):
     x = [p.x for p in points]
     y = [p.y for p in points]
     return [x, y]
+
+def less_than_180(v):
+    return v.y > 0 or (v.y == 0 and v.x >= 0)
+
+def orientation(v, w):
+    return cmp(v.det(w), 0)
+
+def cmp_vector_circular(v, w):
+    if less_than_180(v):
+        if less_than_180(w): return orientation(w, v)
+        else: return -1
+    else:
+        if less_than_180(w): return +1
+        else: return orientation(w, v)
