@@ -7,9 +7,15 @@ import inspect
 import itertools
 import functools
 from math import sin, cos, pi, sqrt
+from point import *
 
 inf = float("inf")
 colors = ['#00ff00', '#ff0000', '#0000ff', '#ffff00', '#ff00ff', '#00ffff']
+
+def sign(x):
+    if x < 0: return -1
+    if x > 0: return +1
+    return 0
 
 def LINE():
     """Returns the current line number in our program."""
@@ -21,111 +27,6 @@ def first(t):
 def second(t):
     return t[1]
 
-@functools.total_ordering
-class Point(object):
-    
-    def __init__(self, x=0, y=0):
-        self.x = x
-        self.y = y
-
-    def __hash__(self):
-        return hash((self.x, self.y))
-
-    def __getitem__(self, index):
-        if index == 0:
-            return self.x
-        if index == 1:
-            return self.y
-        raise ValueError("Index must be 0 for x or 1 for y, not %d"%index)
-
-    def __lt__(self, other):
-        if self[0] == other[0]:
-            return self[1] < other[1]
-        return self[0] < other[0]
-
-    def __eq__(self, other):
-        return self[0] == other[0] and self[1] == other[1]
-    
-    def __ne__(self, other):
-        return self[0] != other[0] or self[1] != other[1]
-    
-    def __add__(self, other):
-        return Point(self[0] + other[0], self[1] + other[1])
-
-    def __sub__(self, other):
-        return Point(self[0] - other[0], self[1] - other[1])
-
-    def __mul__(self, other):
-        return Point(self[0]*other, self[1]*other)
-
-    def __neg__(self):
-        return Point(-self[0], -self[1])
-
-    __rmul__ = __mul__
-
-    def is_now(self, other):
-        self.x = other.x
-        self.y = other.y
-
-    def dot(self, other):
-        return self[0]*other[0] + self[1]*other[1]
-
-    def det(self, other):
-        return self[0]*other[1] - self[1]*other[0]
-
-    def left(self):
-        return Point(-self[1], self[0])
-
-    def right(self):
-        return Point(self[1], -self[0])
-
-    def is_right_of(self, a, b):
-        return (self - a).det(b - a) > 0
-    
-    def is_left_of(self, a, b):
-        return (self - a).det(b - a) < 0
-
-    def length2(self):
-        return self.dot(self)
-    
-    def length(self):
-        return math.sqrt(self.length2())
-
-    def dist2(self, other):
-        return (self - other).length2()
-    
-    def dist_squared(self, other):
-        return (self - other).length2()
-    
-    def dist(self, other):
-        return (self - other).length()
-
-    def angle(self):
-        return math.atan2(self[1], self[0])
-
-    def polar(self, angle, radius):
-        return self + Point(radius*math.cos(angle), radius*math.sin(angle))
-
-    def scaled(self, new_length):
-        return new_length/self.length() * self
-
-    def normalized(self):
-        return self.scaled(1)
-
-    def __str__(self):
-        x, y = self.x, self.y
-        return "Pnt(%s, %s)"%(str(x), str(y))
-    
-    __repr__ = __str__
-    
-    def quadrant(self):
-        if self.y > 0:
-            if self.x > 0: return 0
-            else: return 1
-        else:
-            if self.x < 0: return 2
-            return 3
-
 class Segment(object):
 
     def __init__(self, a, b):
@@ -136,6 +37,14 @@ class Segment(object):
         yield self.a
         yield self.b
         raise StopIteration
+
+    def __eq__(self, other):
+        a, b = self
+        return a == other.a and b == other.b
+    
+    def __ne__(self, other):
+        a, b = self
+        return a != other.a or b != other.b
     
     def other(self, p):
         a, b = self
@@ -175,7 +84,7 @@ class Segment(object):
     def intersections_horizontal(self, p):
         a, b = self
     
-        if p.y < min(a.y, b.y) or p.y > max(a.y, b.y): return [[], [], []]
+        if p.y < min(a.y, b.y) or p.y >= max(a.y, b.y): return [[], [], []]
 
         if a.y == b.y: return [[], [], []]
 
@@ -401,7 +310,7 @@ class Arc(object):
 
     def __str__(self):
         a, b, c = self.a, self.b, self.center
-        return "Arc(%s, %s, %s)"%(str(c), str(a), str(b))
+        return "Arc(%s, %s, %s, %d)"%(str(c), str(a), str(b), 1 if self.clockwise else 0)
     
     __repr__ = __str__
 

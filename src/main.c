@@ -24,10 +24,127 @@ void on_frame(void){
     ar_texture_bind(texture);
     glUniform1i(utex0, 0);
 
-#if 1
+#if 0
     draw_svg(mvp, projection);
 #else
 
+    int i, n;
+    FILE *fp = fopen("development/py/arcs.txt", "rb");
+    assert(fp);
+    fscanf(fp, "%d", &n);
+    printf("%i arcs\n", n);
+
+    assert(n % 2 == 0);
+
+    int n_vertices = n/2*6;
+
+    struct ar_arc *arcs = malloc(sizeof(*arcs)*n);
+    struct ar_vertex *vertices = malloc(sizeof(*vertices)*n_vertices);
+
+    for (i = 0; i < n; i++){
+        struct ar_arc *arc = &arcs[i];
+        int type;
+        fscanf(fp, "%d", &type);
+        if (type == 0){
+            float cx, cy, x0, y0, x1, y1;
+            int clockwise;
+            fscanf(fp, "%f %f %f %f %f %f %d", &cx, &cy, &x0, &y0, &x1, &y1, &clockwise);
+            vec2 center = v2(cx, cy);
+            vec2 a = v2(x0, y0);
+            vec2 b = v2(x1, y1);
+            double radius = v2dist(a, center);
+            ar_arc_init(arc, center, radius, a, b, clockwise ? AR_ARC_CLOCKWISE : AR_ARC_COUNTERCLOCKWISE);
+        }else{
+            float x0, y0, x1, y1;
+            fscanf(fp, "%f %f %f %f", &x0, &y0, &x1, &y1);
+            vec2 a = v2(x0, y0);
+            vec2 b = v2(x1, y1);
+            ar_arc_init(arc, a, 0.0, a, b, AR_ARC_LINE);
+        }
+    }
+
+    fclose(fp);
+
+    struct ar_vertex *vertex_ptr = vertices;
+
+    for (i = 0; i < n; i += 2){
+        struct ar_arc *lower = &arcs[i + 0];
+        struct ar_arc *upper = &arcs[i + 1];
+
+        struct ar_vertex v;
+        v.color = AR_WHITE;
+        v.u = 0.0f;
+        v.v = 0.0f;
+
+        v.x_lower = lower->center.x;
+        v.y_lower = lower->center.y;
+        v.x_upper = upper->center.x;
+        v.y_upper = upper->center.y;
+
+        float x0 = lower->start.x;
+        float y0 = lower->start.y;
+        float x1 = lower->end.x;
+        float y1 = lower->end.y;
+        float x2 = upper->end.x;
+        float y2 = upper->end.y;
+        float x3 = upper->start.x;
+        float y3 = upper->start.y;
+
+        if (lower->arc_type == AR_ARC_LINE){
+            v.r_lower = 0.0f;
+        }else{
+            v.r_lower = lower->radius;
+            if (lower->arc_type == AR_ARC_CLOCKWISE){
+                v.alpha_lower = 0.0f;
+            }else{
+                v.alpha_lower = 1.0f;
+                y0 -= v.r_lower;
+                y1 -= v.r_lower;
+            }
+        }
+
+        if (upper->arc_type == AR_ARC_LINE){
+            v.r_upper = 0.0f;
+        }else{
+            v.r_upper = upper->radius;
+            if (upper->arc_type == AR_ARC_CLOCKWISE){
+                y2 += v.r_upper;
+                y3 += v.r_upper;
+                v.alpha_upper = 1.0f;
+            }else{
+                v.alpha_upper = 0.0f;
+            }
+        }
+
+        v.x = x0;
+        v.y = y0;
+        *vertex_ptr++ = v;
+
+        v.x = x1;
+        v.y = y1;
+        *vertex_ptr++ = v;
+
+        v.x = x2;
+        v.y = y2;
+        *vertex_ptr++ = v;
+
+        v.x = x0;
+        v.y = y0;
+        *vertex_ptr++ = v;
+
+        v.x = x2;
+        v.y = y2;
+        *vertex_ptr++ = v;
+
+        v.x = x3;
+        v.y = y3;
+        *vertex_ptr++ = v;
+    }
+    free(arcs);
+
+    ar_draw(vertices, n_vertices, GL_TRIANGLES, apos, atex, acol);
+
+    free(vertices);
 #endif
 
     glutSwapBuffers();
@@ -115,6 +232,7 @@ void on_key_up(unsigned char key, int x, int y){
 }
 
 int main(int argc, char **argv){
+#if 0
     const char *vert_src =
         "#version 120\r\n"
         AR_STR(
@@ -150,6 +268,73 @@ int main(int argc, char **argv){
             gl_FragColor = texture2D(utex0, vtex) * vcol;
         }
     );
+#else
+    const char *vert_src =
+        "#version 120\r\n"
+        AR_STR(
+        attribute vec4 apos;
+        attribute vec2 atex;
+        attribute vec4 acol;
+        attribute vec4 a_data0;
+        attribute vec4 a_data1;
+
+        varying vec2 vpos;
+        varying vec2 vtex;
+        varying vec4 vcol;
+
+        varying vec4 v_data0;
+        varying vec4 v_data1;
+
+        uniform mat4 umvp;
+
+        void main(){
+            v_data0 = a_data0;
+            v_data1 = a_data1;
+            vtex = atex;
+            vcol = acol;
+            vpos = apos.xy;
+            vec4 pos = umvp*vec4(apos.xyz, 1.0);
+            gl_Position = pos;
+        }
+    );
+
+    const char *frag_src =
+        "#version 120\r\n"
+        AR_STR(
+        varying vec2 vpos;
+        varying vec2 vtex;
+        varying vec4 vcol;
+
+        varying vec4 v_data0;
+        varying vec4 v_data1;
+
+        uniform sampler2D utex0;
+
+        void main(){
+            vec2 p = vpos;
+
+            vec2 c_lower = v_data0.xy;
+            vec2 c_upper = v_data0.zw;
+            float r_lower = v_data1.x;
+            float r_upper = v_data1.y;
+            float alpha_lower = v_data1.z;
+            float alpha_upper = v_data1.w;
+
+            float alpha = (c_lower.y <= p.y && p.y <= c_upper.y) ? 1.0 : 0.0;
+
+            if (distance(c_lower, p) < r_lower) alpha = alpha_lower;
+            if (distance(c_upper, p) < r_upper) alpha = alpha_upper;
+            //alpha = distance(c_lower, p) < r_lower ? alpha_lower : alpha;
+            //alpha = distance(c_upper, p) < r_upper ? alpha_upper : alpha;
+
+            vec4 color = texture2D(utex0, vtex) * vcol;
+
+            color.a *= alpha;
+
+            gl_FragColor = color;
+        }
+    );
+#endif
 
     int x, y;
     int nx = 16;
@@ -169,7 +354,7 @@ int main(int argc, char **argv){
     control_points[3] = v2(100, 200);
 
     glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_STENCIL);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_STENCIL);
     glutInitWindowSize(window.width, window.height);
     glutCreateWindow("");
 
@@ -182,6 +367,14 @@ int main(int argc, char **argv){
     apos  = glGetAttribLocation(arc_shader->program, "apos");
     atex  = glGetAttribLocation(arc_shader->program, "atex");
     acol  = glGetAttribLocation(arc_shader->program, "acol");
+
+#if 1
+    a_data0 = glGetAttribLocation(arc_shader->program, "a_data0");
+    a_data1 = glGetAttribLocation(arc_shader->program, "a_data1");
+
+    assert(a_data0 != -1);
+    assert(a_data1 != -1);
+#endif
 
     assert(apos != -1);
     assert(atex != -1);

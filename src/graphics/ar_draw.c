@@ -1,5 +1,8 @@
 #include "ar_draw.h"
 
+extern GLint a_data0;
+extern GLint a_data1;
+
 void ar_draw(const struct ar_vertex *vertices, int n_vertices, GLenum mode, GLint apos, GLint atex, GLint acol){
     GLuint vbo;
 
@@ -27,6 +30,16 @@ void ar_draw(const struct ar_vertex *vertices, int n_vertices, GLenum mode, GLin
     if (acol != -1){
         glEnableVertexAttribArray(acol);
         glVertexAttribPointer(acol, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(*vertices), (char*)16);
+    }
+
+    if (a_data0 != -1){
+        glEnableVertexAttribArray(a_data0);
+        glVertexAttribPointer(a_data0, 4, GL_FLOAT, GL_FALSE, sizeof(*vertices), (char*)20);
+    }
+
+    if (a_data1 != -1){
+        glEnableVertexAttribArray(a_data1);
+        glVertexAttribPointer(a_data1, 4, GL_FLOAT, GL_FALSE, sizeof(*vertices), (char*)36);
     }
 
     glDrawArrays(mode, 0, n_vertices);
