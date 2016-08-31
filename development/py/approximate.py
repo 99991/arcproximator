@@ -29,16 +29,18 @@ class CubicBezier(object):
 
     def split(self, t):
         a, b, c, d = self.points
-        ab = lerp(a, b, t)
-        bc = lerp(b, c, t)
-        cd = lerp(c, d, t)
+        p0, p1, p2, p3 = self.points
+        p01 = lerp(p0, p1, t)
+        p12 = lerp(p1, p2, t)
+        p23 = lerp(p2, p3, t)
 
-        abc = lerp(ab, bc, t)
-        bcd = lerp(bc, cd, t)
-        abcd = lerp(abc, bcd, t)
+        p012 = lerp(p01, p12, t)
+        p123 = lerp(p12, p23, t)
 
-        curve0 = CubicBezier((a, ab, abc, abcd))
-        curve1 = CubicBezier((abcd, bcd, cd, d))
+        p0123 = lerp(p012, p123, t)
+
+        curve0 = CubicBezier((p0, p01, p012, p0123))
+        curve1 = CubicBezier((p0123, p123, p23, p3))
         
         return (curve0, curve1)
 

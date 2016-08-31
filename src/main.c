@@ -1,5 +1,9 @@
 #include "out_of_sight.h"
 
+#if 0
+#define USE_STENCIL_BUFFER
+#endif
+
 void on_frame(void){
     mat4 projection = m4_ortho2d(0.0f, window.width, window.height, 0.0f);
     mat23 world_to_screen = window.world_to_screen;
@@ -24,7 +28,7 @@ void on_frame(void){
     ar_texture_bind(texture);
     glUniform1i(utex0, 0);
 
-#if 0
+#ifdef USE_STENCIL_BUFFER
     draw_svg(mvp, projection);
 #else
 
@@ -89,9 +93,19 @@ void on_frame(void){
         float y2 = upper->end.y;
         float x3 = upper->start.x;
         float y3 = upper->start.y;
-
+/*
+        struct ar_vertex w[4];
+        w[0] = ar_vert(x0, y0, 0, 0, AR_WHITE);
+        w[1] = ar_vert(x1, y1, 0, 0, AR_WHITE);
+        w[2] = ar_vert(x2, y2, 0, 0, AR_WHITE);
+        w[3] = ar_vert(x3, y3, 0, 0, AR_WHITE);
+        ar_draw(w, 4, GL_QUADS, apos, atex, acol);
+*/
         if (lower->arc_type == AR_ARC_LINE){
             v.r_lower = 0.0f;
+            v.r_lower = 1000.0f;
+            v.y_lower -= v.r_lower;
+            v.alpha_lower = 1.0f;
         }else{
             v.r_lower = lower->radius;
             if (lower->arc_type == AR_ARC_CLOCKWISE){
@@ -105,6 +119,9 @@ void on_frame(void){
 
         if (upper->arc_type == AR_ARC_LINE){
             v.r_upper = 0.0f;
+            v.r_upper = 1000.0f;
+            v.y_upper += v.r_upper;
+            v.alpha_upper = 1.0f;
         }else{
             v.r_upper = upper->radius;
             if (upper->arc_type == AR_ARC_CLOCKWISE){
@@ -232,7 +249,7 @@ void on_key_up(unsigned char key, int x, int y){
 }
 
 int main(int argc, char **argv){
-#if 0
+#ifdef USE_STENCIL_BUFFER
     const char *vert_src =
         "#version 120\r\n"
         AR_STR(
@@ -322,10 +339,8 @@ int main(int argc, char **argv){
 
             float alpha = (c_lower.y <= p.y && p.y <= c_upper.y) ? 1.0 : 0.0;
 
-            if (distance(c_lower, p) < r_lower) alpha = alpha_lower;
-            if (distance(c_upper, p) < r_upper) alpha = alpha_upper;
-            //alpha = distance(c_lower, p) < r_lower ? alpha_lower : alpha;
-            //alpha = distance(c_upper, p) < r_upper ? alpha_upper : alpha;
+            if (distance(c_lower, p) <= r_lower) alpha = alpha_lower;
+            if (distance(c_upper, p) <= r_upper) alpha = alpha_upper;
 
             vec4 color = texture2D(utex0, vtex) * vcol;
 
@@ -368,12 +383,10 @@ int main(int argc, char **argv){
     atex  = glGetAttribLocation(arc_shader->program, "atex");
     acol  = glGetAttribLocation(arc_shader->program, "acol");
 
-#if 1
+#ifdef USE_STENCIL_BUFFER
+#else
     a_data0 = glGetAttribLocation(arc_shader->program, "a_data0");
     a_data1 = glGetAttribLocation(arc_shader->program, "a_data1");
-
-    assert(a_data0 != -1);
-    assert(a_data1 != -1);
 #endif
 
     assert(apos != -1);

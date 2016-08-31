@@ -165,28 +165,22 @@ def without_short_curves(curves):
     
 def snap(p):
     return Point(round(p.x), round(p.y))
-"""
+
+def arc_with_improved_center(arc):
+    a, b, c, radius = arc.a, arc.b, arc.center, arc.radius()
+    p = 0.5*(a + b)
+    p = (p - c).scaled(radius) + c
+    return arc_from_points(a, p, b)
+
 def improve_centers(curves):
     new_curves = []
     for curve in curves:
         if type(curve) == Arc:
-            a, b, c, radius = curve.a, curve.b, curve.center, curve.radius()
-            p = 0.5*(a + b)
-            if a.y == b.y:
-                if curve.clockwise:
-                    p.y += radius
-                else:
-                    p.y -= radius
-            else:
-                p = (p - c).scaled(curve.radius()) + c
-            p = snap(p)
-            arc = arc_from_points(a, p, b)
-            new_curves.append(arc)
-            #new_curves.append(curve)
+            new_curves.append(arc_with_improved_center(curve))
         else:
             new_curves.append(curve)
     return new_curves
-"""
+
 def arc_intersections_horizontal(arc, p):
     a, b, c = arc.a, arc.b, arc.center
     r2 = a.dist2(c)
@@ -491,10 +485,10 @@ def triangulate(mouse, points):
     curves = make_curves_x_monotone(curves)
     curves = self_intersect_curves(curves)
     curves = without_short_curves(curves)
-    #curves = improve_centers(curves)
     curves = with_split_segments(curves)
     curves = snap_curves(curves, 2)
     curves = without_short_curves(curves)
+    curves = improve_centers(curves)
     faces = unleash_face_eater(curves)
 
     final_curves = []
@@ -531,6 +525,10 @@ def triangulate(mouse, points):
             curve_b = curves[j]
             final_curves.append(curve_a)
             final_curves.append(curve_b)
+            draw_curve(curve_a)
+            draw_curve(curve_b)
+            draw_line(curve_a.a, curve_b.a)
+            draw_line(curve_b.a, curve_b.b)
     
     f = open("arcs.txt", "wb")
     strings = [str(len(final_curves))]
@@ -580,19 +578,19 @@ if 0:
     points = [Point(x, y) for x, y in zip(xs, ys)]
 
 random.seed(0)
+
 if 1:
-    n = 20
+    n = 30
     n = n*3 + 1
     center = 0.5*Point(width, height)
     
     points = []
-    angle = 0
+    angle = 0.25
     for i in range(n):
         radius = 50 + 300.0*i/n
         p = center.polar(angle, radius)
         points.append(p)
-        #angle += random.random()*0.2 + 0.5
-        angle += 0.5
+        angle += 0.7
 
 """
 random.seed(1)

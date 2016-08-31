@@ -29,9 +29,13 @@ struct ar_window {
 struct ar_window window;
 struct ar_shader arc_shader[1];
 struct ar_texture texture[1];
-GLint apos, atex, acol, umvp, utex0;
-GLint a_data0;
-GLint a_data1;
+GLint umvp;
+GLint utex0;
+GLint apos;
+GLint atex;
+GLint acol;
+GLint a_data0 = -1;
+GLint a_data1 = -1;
 vec2 control_points[4];
 
 vec2 screen_to_world(vec2 screen_pos){
