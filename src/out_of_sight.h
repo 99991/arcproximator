@@ -26,6 +26,8 @@ struct ar_window {
     mat23 world_to_screen;
 };
 
+#define MAX_VERTICES (1024*1024)
+
 struct ar_window window;
 struct ar_shader arc_shader[1];
 struct ar_texture texture[1];
@@ -36,7 +38,7 @@ GLint atex;
 GLint acol;
 GLint a_data0 = -1;
 GLint a_data1 = -1;
-GLint a_data2 = -1;
+GLuint vbo;
 vec2 control_points[4];
 
 vec2 screen_to_world(vec2 screen_pos){

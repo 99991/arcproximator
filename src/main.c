@@ -84,93 +84,100 @@ void on_frame(void){
         v.cy_lower = lower->center.y;
         v.cx_upper = upper->center.x;
         v.cy_upper = upper->center.y;
+        v.r_lower = lower->radius;
+        v.r_upper = upper->radius;
+        v.type_lower = lower->arc_type;
+        v.type_upper = upper->arc_type;
 
-        float x0 = lower->start.x;
-        float y0 = lower->start.y;
-        float x1 = lower->end.x;
-        float y1 = lower->end.y;
-        float x2 = upper->end.x;
-        float y2 = upper->end.y;
-        float x3 = upper->start.x;
-        float y3 = upper->start.y;
+        vec2 p[4] = {
+            v2(lower->start.x, lower->start.y),
+            v2(lower->end.x, lower->end.y),
+            v2(upper->end.x, upper->end.y),
+            v2(upper->start.x, upper->start.y),
+        };
 
-        /* could compare for equality directly,
-        but compiler does not believe that it was intended */
-        assert(x0 >= x3 && x0 <= x3);
-        assert(x1 >= x2 && x1 <= x2);
-/*
-        struct ar_vertex w[4];
-        w[0] = ar_vert(x0, y0, 0, 0, AR_WHITE);
-        w[1] = ar_vert(x1, y1, 0, 0, AR_WHITE);
-        w[2] = ar_vert(x2, y2, 0, 0, AR_WHITE);
-        w[3] = ar_vert(x3, y3, 0, 0, AR_WHITE);
+        /* arcs must be x-monotone */
+        /* and the lower arc must be below the upper arc */
+        assert(p[0].x == p[3].x);
+        assert(p[1].x == p[2].x);
+        assert(p[0].y <= p[3].y);
+        assert(p[1].y <= p[2].y);
+        assert(p[0].x < p[1].x);
+        assert(p[3].x < p[2].x);
 
-        ar_draw(w, 4, GL_QUADS, apos, atex, acol);
-*/
-        if (lower->arc_type == AR_ARC_LINE){
-            v.r_lower = 0.0f;
-            v.r_lower = 1000.0f;
-            v.cy_lower -= v.r_lower;
-            v.alpha_lower = 1.0f;
-        }else{
-            v.r_lower = lower->radius;
-            if (lower->arc_type == AR_ARC_CLOCKWISE){
-                v.alpha_lower = 0.0f;
-            }else{
-                v.alpha_lower = 1.0f;
-                y0 -= v.r_lower;
-                y1 -= v.r_lower;
-            }
+        if (lower->arc_type == AR_ARC_COUNTERCLOCKWISE){
+            vec2 c = lower->center;
+            float y = p[0].x <= c.x && c.x <= p[1].x ? c.y - lower->radius :
+                p[0].y < p[1].y ? p[0].y : p[1].y;
+            p[0].y = y;
+            p[1].y = y;
         }
 
-        if (upper->arc_type == AR_ARC_LINE){
-            v.r_upper = 0.0f;
-            v.r_upper = 1000.0f;
-            v.cy_upper += v.r_upper;
-            v.alpha_upper = 1.0f;
-        }else{
-            v.r_upper = upper->radius;
-            if (upper->arc_type == AR_ARC_CLOCKWISE){
-                y2 += v.r_upper;
-                y3 += v.r_upper;
-                v.alpha_upper = 1.0f;
-            }else{
-                v.alpha_upper = 0.0f;
-            }
+        if (upper->arc_type == AR_ARC_CLOCKWISE){
+            vec2 c = upper->center;
+            float y = p[0].x <= c.x && c.x <= p[1].x ? c.y + upper->radius :
+                p[2].y > p[3].y ? p[2].y : p[3].y;
+            p[2].y = y;
+            p[3].y = y;
         }
 
-        v.x = x0;
-        v.y = y0;
-        *vertex_ptr++ = v;
-
-        v.x = x1;
-        v.y = y1;
-        *vertex_ptr++ = v;
-
-        v.x = x2;
-        v.y = y2;
-        *vertex_ptr++ = v;
-
-        v.x = x0;
-        v.y = y0;
-        *vertex_ptr++ = v;
-
-        v.x = x2;
-        v.y = y2;
-        *vertex_ptr++ = v;
-
-        v.x = x3;
-        v.y = y3;
-        *vertex_ptr++ = v;
+        int j, indices[6] = {0, 1, 2, 0, 2, 3};
+        for (j = 0; j < 6; j++){
+            int k = indices[j];
+            v.x = p[k].x;
+            v.y = p[k].y;
+            *vertex_ptr++ = v;
+        }
     }
     free(arcs);
 
-    ar_draw(vertices, n_vertices, GL_TRIANGLES, apos, atex, acol);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(*vertices)*n_vertices, vertices);
+
+    if (apos != -1){
+        glEnableVertexAttribArray(apos);
+        glVertexAttribPointer(apos, 2, GL_FLOAT, GL_FALSE, sizeof(*vertices), (char*)0);
+    }
+
+    if (atex != -1){
+        glEnableVertexAttribArray(atex);
+        glVertexAttribPointer(atex, 2, GL_FLOAT, GL_FALSE, sizeof(*vertices), (char*)8);
+    }
+
+    if (acol != -1){
+        glEnableVertexAttribArray(acol);
+        glVertexAttribPointer(acol, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(*vertices), (char*)16);
+    }
+
+    if (a_data0 != -1){
+        glEnableVertexAttribArray(a_data0);
+        glVertexAttribPointer(a_data0, 4, GL_FLOAT, GL_FALSE, sizeof(*vertices), (char*)20);
+    }
+
+    if (a_data1 != -1){
+        glEnableVertexAttribArray(a_data1);
+        glVertexAttribPointer(a_data1, 4, GL_FLOAT, GL_FALSE, sizeof(*vertices), (char*)36);
+    }
+
+    GLuint timeElapsedQuery;
+
+    glGenQueries(1, &timeElapsedQuery);
+    glBeginQuery(GL_TIME_ELAPSED, timeElapsedQuery);
+
+    glDrawArrays(GL_TRIANGLES, 0, vertex_ptr - vertices);
+    /*
+    ar_draw(vertices, vertex_ptr - vertices, GL_TRIANGLES, apos, atex, acol);
+    */
+    glEndQuery(GL_TIME_ELAPSED);
 
     free(vertices);
 #endif
 
     glutSwapBuffers();
+
+    uint64_t t;
+    glGetQueryObjectui64v(timeElapsedQuery, GL_QUERY_RESULT, &t);
+    printf("Time Elapsed: %f milliseconds\n", t*1e-6);
 }
 
 void work(int frame){
@@ -284,11 +291,14 @@ int main(int argc, char **argv){
         uniform sampler2D utex0;
 
         void main(){
-            float r = length(vtex);
+            float r = dot(vtex, vtex);
 
             if (r > 1.0) discard;
 
+            gl_FragColor = vec4(1.0);
+            /*
             gl_FragColor = texture2D(utex0, vtex) * vcol;
+            */
         }
     );
 #else
@@ -300,7 +310,6 @@ int main(int argc, char **argv){
         attribute vec4 acol;
         attribute vec4 a_data0;
         attribute vec4 a_data1;
-        attribute vec4 a_data2;
 
         varying vec2 vpos;
         varying vec2 vtex;
@@ -308,14 +317,12 @@ int main(int argc, char **argv){
 
         varying vec4 v_data0;
         varying vec4 v_data1;
-        varying vec4 v_data2;
 
         uniform mat4 umvp;
 
         void main(){
             v_data0 = a_data0;
             v_data1 = a_data1;
-            v_data2 = a_data2;
             vtex = atex;
             vcol = acol;
             vpos = apos.xy;
@@ -333,7 +340,6 @@ int main(int argc, char **argv){
 
         varying vec4 v_data0;
         varying vec4 v_data1;
-        varying vec4 v_data2;
 
         uniform sampler2D utex0;
 
@@ -342,23 +348,34 @@ int main(int argc, char **argv){
 
             vec2 c_lower = v_data0.xy;
             vec2 c_upper = v_data0.zw;
+
             float r_lower = v_data1.x;
             float r_upper = v_data1.y;
-            float alpha_lower = v_data1.z;
-            float alpha_upper = v_data1.w;
-            float lower_y = v_data2.x;
-            float upper_y = v_data2.y;
 
-            float alpha = (c_lower.y <= p.y && p.y <= c_upper.y) ? 1.0 : 0.0;
+            float type_lower = v_data1.z;
+            float type_upper = v_data1.w;
 
-            if (distance(c_lower, p) <= r_lower) alpha = alpha_lower;
-            if (distance(c_upper, p) <= r_upper) alpha = alpha_upper;
+            vec2 pa = p - c_lower;
+            vec2 pb = p - c_upper;
 
+            float ya = sqrt(r_lower*r_lower - pa.x*pa.x);
+            float yb = sqrt(r_upper*r_upper - pb.x*pb.x);
+
+            if (type_lower == 0.0) ya = -ya;
+            if (type_upper == 0.0) yb = -yb;
+            if (type_lower == 2.0) ya = pa.y;
+            if (type_upper == 2.0) yb = pb.y;
+
+            float alpha = ya <= pa.y && pb.y <= yb ? 1.0 : 0.0;
+
+            gl_FragColor = vec4(1.0, 1.0, 1.0, alpha);
+/*
             vec4 color = texture2D(utex0, vtex) * vcol;
 
             color.a *= alpha;
 
             gl_FragColor = color;
+            */
         }
     );
 #endif
@@ -371,8 +388,8 @@ int main(int argc, char **argv){
         texture_data[x + y*nx] =  0xffffffff;
     }
 
-    window.width = 512;
-    window.height = 512;
+    window.width = 800;
+    window.height = 800;
     window.world_to_screen = m23id();
 
     control_points[0] = v2(200, 100);
@@ -399,16 +416,14 @@ int main(int argc, char **argv){
 #else
     a_data0 = glGetAttribLocation(arc_shader->program, "a_data0");
     a_data1 = glGetAttribLocation(arc_shader->program, "a_data1");
-    a_data2 = glGetAttribLocation(arc_shader->program, "a_data2");
 #endif
 
-    assert(apos != -1);
-    assert(atex != -1);
-    assert(acol != -1);
-    assert(umvp != -1);
-    assert(utex0 != -1);
-
     ar_texture_init(texture, nx, ny, texture_data);
+
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+    glBufferData(GL_ARRAY_BUFFER, sizeof(struct ar_vertex)*MAX_VERTICES, NULL, GL_STATIC_DRAW);
 
     glutCreateMenu(menu_callback);
     glutAddMenuEntry("Show bezier", 0);

@@ -158,7 +158,7 @@ def make_curves_x_monotone(curves):
 
     return [curve.left_oriented() for curve in new_curves]
 
-def draw_curve(curve, color='white'):
+def draw_curve(curve, color='black'):
     if type(curve) == Arc:
         draw_arc(curve, color)
     elif type(curve) == Segment:
@@ -499,16 +499,68 @@ def unleash_face_eater(curves):
 
     return faces
 
+def save(path, content):
+    with open(path, "wb") as f:
+        f.write(content)
+
+def save_svg(path, beziers):
+    with open(path, "wb") as f:
+        s = """<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="200.0mm"
+   height="200.0mm"
+   viewBox="0 0 800.0 800.0"
+   id="svg1337"
+   version="1.1">
+   
+  <g>
+    <path style="fill:#000000;fill-rule:evenodd;fill-opacity:1;"
+       d=" """
+        f.write(s)
+
+        bezier = beziers[0]
+        a = bezier.points[0]
+        path = ['M %f,%f'%(a.x, a.y)]
+        for bezier in beziers:
+            a, b, c, d = bezier.points
+            path.append('C %f,%f %f,%f %f,%f'%(b.x, b.y, c.x, c.y, d.x, d.y))
+        path.append('z')
+        path = ' '.join(path)
+        f.write(path)
+
+        f.write('"/></g></svg>')
+
+        return path
+
 def triangulate(mouse, points):
 
     curves = []
+    beziers = []
+
+    print("Bounds:")
+    print(min(map(first, points)))
+    print(min(map(second, points)))
+    print(max(map(first, points)))
+    print(max(map(second, points)))
 
     for i in range(0, len(points), 3):
         control_points = points[i:i+4]
         if len(control_points) < 4: break
         
         bezier = CubicBezier(control_points)
+        beziers.append(bezier)
+        
         subdivide(bezier, 1.0, curves)
+
+    path = save_svg("beziers.svg", beziers)
+    save("path.txt", path)
 
     curves.append(Segment(points[0], points[-1]))
 
@@ -546,12 +598,20 @@ def triangulate(mouse, points):
 
         curves = new_curves
 
+        points = get_endpoints(curves)
+
         n = len(curves)
         for i in range(n/2):
             j = n - i - 1
             curve_a = curves[i]
             curve_b = curves[j]
-            
+
+            if curve_a.a.y > curve_b.a.y:
+                curve_b, curve_a = curve_a, curve_b
+
+            assert(curve_a.a.y <= curve_b.a.y)
+            assert(curve_a.b.y <= curve_b.b.y)
+
             final_curves.append(curve_a)
             final_curves.append(curve_b)
 
@@ -561,6 +621,7 @@ def triangulate(mouse, points):
             draw_line(curve_a.b, curve_b.b)
             assert(curve_a.a.x == curve_b.a.x)
             assert(curve_a.b.x == curve_b.b.x)
+
             
         
 
@@ -660,32 +721,32 @@ def draw_grid(dx=100, dy=100, color='gray'):
     for y in range(0, height, dy):
         canvas.create_line(0, y, width, y, dash=(4, 4), fill=color)
 
-def write(text, p, color='white', font_size=10):
+def write(text, p, color='black', font_size=10):
     font=("Purisa", font_size)
     p = transform(p)
     canvas.create_text(p.x, p.y, text=text, fill=color, font=font)
 
-def draw_circle(center, radius, color='white', n=100):
+def draw_circle(center, radius, color='black', n=100):
     a = center + Point(radius, 0)
     draw_arc(Arc(center, a, a), color)
 
-def draw_line(a, b, color='white'):
+def draw_line(a, b, color='black'):
     a = transform(a)
     b = transform(b)
     canvas.create_line(a.x, a.y, b.x, b.y, fill=color)
 
-def draw_arc(arc, color='white', n = 100):
+def draw_arc(arc, color='black', n = 100):
     points = arc.points(n)
     for a, b in zip(points, points[1:]):
         draw_line(a, b, color)
 
-def draw_polygon(points, color='white'):
+def draw_polygon(points, color='black'):
     xy = flatten_once((p.x, p.y) for p in map(transform, points))
     canvas.create_polygon(xy, fill=color)
 
 def redraw(mouse=Point(width/2, height/2)):
     canvas.delete('all')
-    canvas.create_rectangle(0, 0, width, height, fill='black')
+    canvas.create_rectangle(0, 0, width, height, fill='white')
     draw_grid()
 
     try:

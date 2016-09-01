@@ -19,13 +19,8 @@ struct ar_vertex {
     float r_lower;
     float r_upper;
 
-    float alpha_lower;
-    float alpha_upper;
-
-    float lower_y;
-    float upper_y;
-    float pad0;
-    float pad1;
+    float type_lower;
+    float type_upper;
 };
 
 #endif

@@ -109,7 +109,7 @@
 1468256235 c:\users\john\desktop\arcproximator\graphics\my_vertex.h
 	<stdint.h>
 
-1472743170 source:c:\users\john\desktop\arcproximator\src\graphics\ar_draw.c
+1472764332 source:c:\users\john\desktop\arcproximator\src\graphics\ar_draw.c
 	"ar_draw.h"
 
 1472396523 c:\users\john\desktop\arcproximator\src\graphics\ar_draw.h
@@ -120,7 +120,7 @@
 	<GL/glew.h>
 	<GL/freeglut.h>
 
-1472743168 c:\users\john\desktop\arcproximator\src\graphics\ar_vertex.h
+1472762526 c:\users\john\desktop\arcproximator\src\graphics\ar_vertex.h
 	<stdint.h>
 
 1472396523 source:c:\users\john\desktop\arcproximator\src\graphics\ar_gl.c
@@ -177,7 +177,7 @@
 	<X11/Xmd.h>
 	<GL/glew.h>
 
-1472742800 source:c:\users\john\desktop\arcproximator\src\main.c
+1472764293 source:c:\users\john\desktop\arcproximator\src\main.c
 	"out_of_sight.h"
 
 1468333818 urand_kerner_roots.h"
@@ -220,7 +220,7 @@
 
 1469460258 cs/ar_color.h"
 
-1472396523 c:\users\john\desktop\arcproximator\src\util\ar_util.h
+1472761830 c:\users\john\desktop\arcproximator\src\util\ar_util.h
 	<stddef.h>
 
 1472396523 c:\users\john\desktop\arcproximator\src\math\ar_durand_kerner_roots.h
@@ -293,7 +293,7 @@
 	"vec2.h"
 	<math.h>
 
-1472396523 source:c:\users\john\desktop\arcproximator\src\util\ar_util.c
+1472761828 source:c:\users\john\desktop\arcproximator\src\util\ar_util.c
 	"ar_util.h"
 	<stdio.h>
 	<stdlib.h>
@@ -476,7 +476,7 @@
 	<stdio.h>
 	<string.h>
 
-1472588162 c:\users\john\desktop\arcproximator\src\out_of_sight.h
+1472764293 c:\users\john\desktop\arcproximator\src\out_of_sight.h
 	"math/ar_bezier3.h"
 	"math/ar_arc.h"
 	"graphics/ar_shader.h"
