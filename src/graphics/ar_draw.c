@@ -1,10 +1,6 @@
 #include "ar_draw.h"
 
-extern GLint a_data0;
-extern GLint a_data1;
-extern GLint vbo;
-
-void ar_draw(const struct ar_vertex *vertices, int n_vertices, GLenum mode, GLint apos, GLint atex, GLint acol){
+void ar_draw(const struct ar_vertex *vertices, int n_vertices, GLenum mode, GLint vbo, GLint apos, GLint atex, GLint acol, GLint a_data0, GLint a_data1){
     if (n_vertices == 0) return;
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo);

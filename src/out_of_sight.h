@@ -31,15 +31,16 @@ struct ar_window {
 struct ar_window window;
 struct ar_shader arc_shader[1];
 struct ar_texture texture[1];
-GLint umvp;
-GLint utex0;
-GLint apos;
-GLint atex;
-GLint acol;
+GLint umvp = -1;
+GLint utex0 = -1;
+GLint apos = -1;
+GLint atex = -1;
+GLint acol = -1;
 GLint a_data0 = -1;
 GLint a_data1 = -1;
-GLuint vbo;
+GLuint vbos[2];
 vec2 control_points[4];
+int n_vertices;
 
 vec2 screen_to_world(vec2 screen_pos){
     return m23mulv2(m23inv(window.world_to_screen), screen_pos);
@@ -92,7 +93,7 @@ void ar_draw_points(const vec2 *points, int n, uint32_t color, GLenum mode){
         vec2 p = points[i];
         vertices[i] = ar_vert(p.x, p.y, 0.0f, 0.0f, color);
     }
-    ar_draw(vertices, n, mode, apos, atex, acol);
+    ar_draw(vertices, n, mode, vbos[0], apos, atex, acol, a_data0, a_data1);
     free(vertices);
 }
 
@@ -100,7 +101,7 @@ void ar_draw_line(vec2 a, vec2 b, uint32_t color){
     struct ar_vertex vertices[2];
     vertices[0] = ar_vert(a.x, a.y, 0.0f, 0.0f, color);
     vertices[1] = ar_vert(b.x, b.y, 0.0f, 0.0f, color);
-    ar_draw(vertices, 2, GL_LINES, apos, atex, acol);
+    ar_draw(vertices, 2, GL_LINES, vbos[0], apos, atex, acol, a_data0, a_data1);
 }
 
 void ar_bezier3_draw(const struct ar_bezier3 *curve, uint32_t color){
@@ -728,33 +729,44 @@ void ar_arc_vertices(const struct ar_arc *arc, struct ar_vertex *vertices, uint3
 
 #include "svg.h"
 
-void draw_svg(mat4 mvp, mat4 projection){
+void set_attributes(struct ar_vertex *vertices){
+    if (apos != -1){
+        glEnableVertexAttribArray(apos);
+        glVertexAttribPointer(apos, 2, GL_FLOAT, GL_FALSE, sizeof(*vertices), (char*)0);
+    }
+
+    if (atex != -1){
+        glEnableVertexAttribArray(atex);
+        glVertexAttribPointer(atex, 2, GL_FLOAT, GL_FALSE, sizeof(*vertices), (char*)8);
+    }
+
+    if (acol != -1){
+        glEnableVertexAttribArray(acol);
+        glVertexAttribPointer(acol, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(*vertices), (char*)16);
+    }
+
+    if (a_data0 != -1){
+        glEnableVertexAttribArray(a_data0);
+        glVertexAttribPointer(a_data0, 4, GL_FLOAT, GL_FALSE, sizeof(*vertices), (char*)20);
+    }
+
+    if (a_data1 != -1){
+        glEnableVertexAttribArray(a_data1);
+        glVertexAttribPointer(a_data1, 4, GL_FLOAT, GL_FALSE, sizeof(*vertices), (char*)36);
+    }
+}
+
+void prepare_svg(const char *path){
     ar_arc_list_init(output_arcs);
 
-#if 0
-    /* fit single curve */
-    const vec2 *p = control_points;
-    struct ar_bezier3 curve[1];
-    ar_bezier3_init(curve, p[0], p[1], p[2], p[3]);
-    ar_fit(curve, 0.1, 16, output_arcs);
-#else
-    /* fit multiple curves */
-/*
-#include "draw.h"
-*/
-    svg_parse_file("images/at_paragraph_snowman_thunder_cloud.svg");
-#endif
+    svg_parse_file(path);
 
     int n_arcs = output_arcs->n;
 
-    printf("%i arcs\n", n_arcs);
-
-    int n_vertices = n_arcs*(3 + 6);
+    n_vertices = n_arcs*(3 + 6);
     struct ar_vertex *vertices = malloc(n_vertices*sizeof(*vertices));
     struct ar_vertex *vertex_pointer = vertices;
     struct ar_arc_list_node *node;
-
-    /* TODO split arcs longer than 180 degrees */
 
     vec2 pivot = v2(0.0, 0.0);
 
@@ -771,52 +783,154 @@ void draw_svg(mat4 mvp, mat4 projection){
         ar_arc_vertices(arc, vertex_pointer, AR_GREEN);
         vertex_pointer += 6;
     }
+    n_vertices = vertex_pointer - vertices;
 
-    /* prepare writing to stencil buffer */
+    /* send curves to GPU */
+    glBindBuffer(GL_ARRAY_BUFFER, vbos[0]);
+    set_attributes(vertices);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(*vertices)*n_vertices, vertices);
+
+    /* send cover geometry to GPU */
+    struct ar_vertex rect_vertices[2*3];
+    ar_make_rect(rect_vertices, 0.0f, 0.0f, 4096.0f, 4096.0f, 0.0f, 0.0f, 0.0f, 0.0f, AR_BLACK);
+    glBufferSubData(GL_ARRAY_BUFFER, sizeof(*vertices)*n_vertices, sizeof(*rect_vertices)*2*6, rect_vertices);
+
+    ar_arc_list_free(output_arcs);
+    free(vertices);
+}
+
+void render_svg(mat4 mvp, mat4 projection){
     glEnable(GL_STENCIL_TEST);
     glClearStencil(0);
+
+    /* prepare writing to stencil buffer */
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
     glStencilFunc(GL_NEVER, 0, 1);
     glStencilOp(GL_INVERT, GL_INVERT, GL_INVERT);
 
-    /* draw triangles */
+    glBindBuffer(GL_ARRAY_BUFFER, vbos[0]);
     upload_model_view_projection(mvp);
-    ar_draw(vertices, vertex_pointer - vertices, GL_TRIANGLES, apos, atex, acol);
+    glDrawArrays(GL_TRIANGLES, 0, n_vertices);
 
     /* prepare coloring stencil buffer */
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glStencilFunc(GL_EQUAL, 1, 1);
     glStencilOp(GL_ZERO, GL_ZERO, GL_ZERO);
 
-#if 0
-    /* draw triangles again */
-    upload_model_view_projection(mvp);
-    ar_draw(vertices, vertex_pointer - vertices, GL_TRIANGLES, apos, atex, acol);
-#else
-    /* draw screen-filling rectangle */
-    struct ar_vertex rect_vertices[2*3];
-    ar_make_rect(rect_vertices, 0.0f, 0.0f, window.width, window.height, 0.0f, 0.0f, 0.0f, 0.0f, AR_GRAY);
     upload_model_view_projection(projection);
-    ar_draw(rect_vertices, 2*3, GL_TRIANGLE_FAN, apos, atex, acol);
-#endif
+    glDrawArrays(GL_TRIANGLES, n_vertices, 2*3);
+
     glDisable(GL_STENCIL_TEST);
+}
 
-#if 1
-    /* draw polygon lines */
-    vertex_pointer = vertices;
-    for (node = output_arcs->head; node != NULL; node = node->next){
-        struct ar_arc *arc = &node->value;
+void prepare_curve_renderer(const char *path){
+    int i, n;
+    FILE *fp = fopen(path, "rb");
+    assert(fp);
+    fscanf(fp, "%d", &n);
+    printf("%i arcs\n", n);
 
-        vec2 a = arc->start;
-        vec2 b = arc->end;
+    assert(n % 2 == 0);
 
-        *vertex_pointer++ = ar_vert(a.x, a.y, 0.0f, 0.0f, AR_GREEN);
-        *vertex_pointer++ = ar_vert(b.x, b.y, 0.0f, 0.0f, AR_GREEN);
+    n_vertices = n/2*6;
+
+    struct ar_arc *arcs = malloc(sizeof(*arcs)*n);
+    struct ar_vertex *vertices = malloc(sizeof(*vertices)*n_vertices);
+
+    for (i = 0; i < n; i++){
+        struct ar_arc *arc = &arcs[i];
+        int type;
+        fscanf(fp, "%d", &type);
+        if (type == 0){
+            float cx, cy, x0, y0, x1, y1;
+            int clockwise;
+            fscanf(fp, "%f %f %f %f %f %f %d", &cx, &cy, &x0, &y0, &x1, &y1, &clockwise);
+            vec2 center = v2(cx, cy);
+            vec2 a = v2(x0, y0);
+            vec2 b = v2(x1, y1);
+            double radius = v2dist(a, center);
+            ar_arc_init(arc, center, radius, a, b, clockwise ? AR_ARC_CLOCKWISE : AR_ARC_COUNTERCLOCKWISE);
+        }else{
+            float x0, y0, x1, y1;
+            fscanf(fp, "%f %f %f %f", &x0, &y0, &x1, &y1);
+            vec2 a = v2(x0, y0);
+            vec2 b = v2(x1, y1);
+            ar_arc_init(arc, a, 0.0, a, b, AR_ARC_LINE);
+        }
     }
-    upload_model_view_projection(mvp);
-    ar_draw(vertices, n_arcs*2, GL_LINES, apos, atex, acol);
-#endif
 
-    ar_arc_list_free(output_arcs);
+    fclose(fp);
+
+    struct ar_vertex *vertex_ptr = vertices;
+
+    for (i = 0; i < n; i += 2){
+        struct ar_arc *lower = &arcs[i + 0];
+        struct ar_arc *upper = &arcs[i + 1];
+
+        struct ar_vertex v;
+        v.color = AR_BLACK;
+        v.u = 0.0f;
+        v.v = 0.0f;
+
+        v.cx_lower = lower->center.x;
+        v.cy_lower = lower->center.y;
+        v.cx_upper = upper->center.x;
+        v.cy_upper = upper->center.y;
+        v.r_lower = lower->radius;
+        v.r_upper = upper->radius;
+        v.type_lower = lower->arc_type;
+        v.type_upper = upper->arc_type;
+
+        vec2 p[4] = {
+            v2(lower->start.x, lower->start.y),
+            v2(lower->end.x, lower->end.y),
+            v2(upper->end.x, upper->end.y),
+            v2(upper->start.x, upper->start.y),
+        };
+
+        /* arcs must be x-monotone */
+        /* and the lower arc must be below the upper arc */
+        assert(p[0].x == p[3].x);
+        assert(p[1].x == p[2].x);
+        assert(p[0].y <= p[3].y);
+        assert(p[1].y <= p[2].y);
+        assert(p[0].x < p[1].x);
+        assert(p[3].x < p[2].x);
+
+        if (lower->arc_type == AR_ARC_COUNTERCLOCKWISE){
+            vec2 c = lower->center;
+            float y = p[0].x <= c.x && c.x <= p[1].x ? c.y - lower->radius :
+                p[0].y < p[1].y ? p[0].y : p[1].y;
+            p[0].y = y;
+            p[1].y = y;
+        }
+
+        if (upper->arc_type == AR_ARC_CLOCKWISE){
+            vec2 c = upper->center;
+            float y = p[0].x <= c.x && c.x <= p[1].x ? c.y + upper->radius :
+                p[2].y > p[3].y ? p[2].y : p[3].y;
+            p[2].y = y;
+            p[3].y = y;
+        }
+
+        int j, indices[6] = {0, 1, 2, 0, 2, 3};
+        for (j = 0; j < 6; j++){
+            int k = indices[j];
+            v.x = p[k].x;
+            v.y = p[k].y;
+            *vertex_ptr++ = v;
+        }
+    }
+    free(arcs);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vbos[0]);
+    set_attributes(vertices);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(*vertices)*n_vertices, vertices);
+
     free(vertices);
+}
+
+void render_curves(void){
+    glBindBuffer(GL_ARRAY_BUFFER, vbos[0]);
+    glDrawArrays(GL_TRIANGLES, 0, n_vertices);
 }

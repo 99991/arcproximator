@@ -6,6 +6,6 @@
 
 void gl_check(int line);
 
-#define gl_CHECK gl_check(__LINE__);
+#define GL_CHECK gl_check(__LINE__);
 
 #endif
