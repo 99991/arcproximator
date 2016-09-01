@@ -36,6 +36,7 @@ GLint atex;
 GLint acol;
 GLint a_data0 = -1;
 GLint a_data1 = -1;
+GLint a_data2 = -1;
 vec2 control_points[4];
 
 vec2 screen_to_world(vec2 screen_pos){

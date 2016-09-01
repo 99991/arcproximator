@@ -8,18 +8,24 @@ struct ar_vertex {
     float y;
     float u;
     float v;
+
     uint32_t color;
 
-    float x_lower;
-    float y_lower;
-    float x_upper;
-    float y_upper;
+    float cx_lower;
+    float cy_lower;
+    float cx_upper;
+    float cy_upper;
 
     float r_lower;
     float r_upper;
 
     float alpha_lower;
     float alpha_upper;
+
+    float lower_y;
+    float upper_y;
+    float pad0;
+    float pad1;
 };
 
 #endif

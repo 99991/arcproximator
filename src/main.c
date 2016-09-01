@@ -80,10 +80,10 @@ void on_frame(void){
         v.u = 0.0f;
         v.v = 0.0f;
 
-        v.x_lower = lower->center.x;
-        v.y_lower = lower->center.y;
-        v.x_upper = upper->center.x;
-        v.y_upper = upper->center.y;
+        v.cx_lower = lower->center.x;
+        v.cy_lower = lower->center.y;
+        v.cx_upper = upper->center.x;
+        v.cy_upper = upper->center.y;
 
         float x0 = lower->start.x;
         float y0 = lower->start.y;
@@ -93,18 +93,24 @@ void on_frame(void){
         float y2 = upper->end.y;
         float x3 = upper->start.x;
         float y3 = upper->start.y;
+
+        /* could compare for equality directly,
+        but compiler does not believe that it was intended */
+        assert(x0 >= x3 && x0 <= x3);
+        assert(x1 >= x2 && x1 <= x2);
 /*
         struct ar_vertex w[4];
         w[0] = ar_vert(x0, y0, 0, 0, AR_WHITE);
         w[1] = ar_vert(x1, y1, 0, 0, AR_WHITE);
         w[2] = ar_vert(x2, y2, 0, 0, AR_WHITE);
         w[3] = ar_vert(x3, y3, 0, 0, AR_WHITE);
+
         ar_draw(w, 4, GL_QUADS, apos, atex, acol);
 */
         if (lower->arc_type == AR_ARC_LINE){
             v.r_lower = 0.0f;
             v.r_lower = 1000.0f;
-            v.y_lower -= v.r_lower;
+            v.cy_lower -= v.r_lower;
             v.alpha_lower = 1.0f;
         }else{
             v.r_lower = lower->radius;
@@ -120,7 +126,7 @@ void on_frame(void){
         if (upper->arc_type == AR_ARC_LINE){
             v.r_upper = 0.0f;
             v.r_upper = 1000.0f;
-            v.y_upper += v.r_upper;
+            v.cy_upper += v.r_upper;
             v.alpha_upper = 1.0f;
         }else{
             v.r_upper = upper->radius;
@@ -294,6 +300,7 @@ int main(int argc, char **argv){
         attribute vec4 acol;
         attribute vec4 a_data0;
         attribute vec4 a_data1;
+        attribute vec4 a_data2;
 
         varying vec2 vpos;
         varying vec2 vtex;
@@ -301,12 +308,14 @@ int main(int argc, char **argv){
 
         varying vec4 v_data0;
         varying vec4 v_data1;
+        varying vec4 v_data2;
 
         uniform mat4 umvp;
 
         void main(){
             v_data0 = a_data0;
             v_data1 = a_data1;
+            v_data2 = a_data2;
             vtex = atex;
             vcol = acol;
             vpos = apos.xy;
@@ -324,6 +333,7 @@ int main(int argc, char **argv){
 
         varying vec4 v_data0;
         varying vec4 v_data1;
+        varying vec4 v_data2;
 
         uniform sampler2D utex0;
 
@@ -336,6 +346,8 @@ int main(int argc, char **argv){
             float r_upper = v_data1.y;
             float alpha_lower = v_data1.z;
             float alpha_upper = v_data1.w;
+            float lower_y = v_data2.x;
+            float upper_y = v_data2.y;
 
             float alpha = (c_lower.y <= p.y && p.y <= c_upper.y) ? 1.0 : 0.0;
 
@@ -387,6 +399,7 @@ int main(int argc, char **argv){
 #else
     a_data0 = glGetAttribLocation(arc_shader->program, "a_data0");
     a_data1 = glGetAttribLocation(arc_shader->program, "a_data1");
+    a_data2 = glGetAttribLocation(arc_shader->program, "a_data2");
 #endif
 
     assert(apos != -1);

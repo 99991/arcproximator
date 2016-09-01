@@ -2,6 +2,7 @@
 
 extern GLint a_data0;
 extern GLint a_data1;
+extern GLint a_data2;
 
 void ar_draw(const struct ar_vertex *vertices, int n_vertices, GLenum mode, GLint apos, GLint atex, GLint acol){
     GLuint vbo;
@@ -40,6 +41,11 @@ void ar_draw(const struct ar_vertex *vertices, int n_vertices, GLenum mode, GLin
     if (a_data1 != -1){
         glEnableVertexAttribArray(a_data1);
         glVertexAttribPointer(a_data1, 4, GL_FLOAT, GL_FALSE, sizeof(*vertices), (char*)36);
+    }
+
+    if (a_data2 != -1){
+        glEnableVertexAttribArray(a_data2);
+        glVertexAttribPointer(a_data2, 4, GL_FLOAT, GL_FALSE, sizeof(*vertices), (char*)36);
     }
 
     glDrawArrays(mode, 0, n_vertices);
