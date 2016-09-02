@@ -3,7 +3,11 @@
 
 #include "ar_gl.h"
 #include "ar_vertex.h"
+#include "ar_shader.h"
 
-void ar_draw(const struct ar_vertex *vertices, int n_vertices, GLenum mode, GLint vbo, GLint apos, GLint atex, GLint acol, GLint a_data0, GLint a_data1);
+void ar_set_attributes(struct ar_shader *shader, const struct ar_vertex *vertices);
+void ar_draw(struct ar_shader *shader, const struct ar_vertex *vertices, int n_vertices, GLenum mode, GLint vbo);
+void ar_enable_attributes(struct ar_shader *shader);
+void ar_disable_attributes(struct ar_shader *shader);
 
 #endif

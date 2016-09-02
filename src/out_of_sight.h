@@ -27,20 +27,19 @@ struct ar_window {
 };
 
 #define MAX_VERTICES (1024*1024)
+#define MAX_VBOS 3
 
 struct ar_window window;
-struct ar_shader arc_shader[1];
-struct ar_texture texture[1];
-GLint umvp = -1;
-GLint utex0 = -1;
-GLint apos = -1;
-GLint atex = -1;
-GLint acol = -1;
-GLint a_data0 = -1;
-GLint a_data1 = -1;
-GLuint vbos[2];
+struct ar_shader shaders[3];
+GLuint vbo;
 vec2 control_points[4];
-int n_vertices;
+int n_vertices[2];
+GLuint fbo;
+int fbo_width = 4096;
+int fbo_height = 4096;
+struct ar_texture fbo_texture[1];
+struct ar_texture fbo_stencil_texture[1];
+struct ar_vertex *vertex_arrays[5];
 
 vec2 screen_to_world(vec2 screen_pos){
     return m23mulv2(m23inv(window.world_to_screen), screen_pos);
@@ -53,7 +52,7 @@ struct ar_vertex ar_vert(float x, float y, float u, float v, uint32_t color){
     vertex.y = y;
     vertex.u = u;
     vertex.v = v;
-    vertex.color = color;
+    ar_color_to_float(color, vertex.color);
 
     return vertex;
 }
@@ -73,7 +72,7 @@ void ar_make_rect(
     vertices[5] = ar_vert(x0, y1, u0, v1, color);
 }
 
-void upload_model_view_projection(mat4 mvp){
+void upload_model_view_projection(struct ar_shader *shader, mat4 mvp){
     /* upload as double not available everywhere */
     float data[16];
     int i, j;
@@ -83,32 +82,32 @@ void upload_model_view_projection(mat4 mvp){
             data[i + j*4] = m4at(mvp, i, j);
         }
     }
-    glUniformMatrix4fv(umvp, 1, 0, data);
+    glUniformMatrix4fv(shader->uniforms[0], 1, 0, data);
 }
 
-void ar_draw_points(const vec2 *points, int n, uint32_t color, GLenum mode){
+void ar_draw_points(struct ar_shader *shader, const vec2 *points, int n, uint32_t color, GLenum mode){
     struct ar_vertex *vertices = (struct ar_vertex*)malloc(sizeof(*vertices)*n);
     int i;
     for (i = 0; i < n; i++){
         vec2 p = points[i];
         vertices[i] = ar_vert(p.x, p.y, 0.0f, 0.0f, color);
     }
-    ar_draw(vertices, n, mode, vbos[0], apos, atex, acol, a_data0, a_data1);
+    ar_draw(shader, vertices, n, mode, vbo);
     free(vertices);
 }
 
-void ar_draw_line(vec2 a, vec2 b, uint32_t color){
+void ar_draw_line(struct ar_shader *shader, vec2 a, vec2 b, uint32_t color){
     struct ar_vertex vertices[2];
     vertices[0] = ar_vert(a.x, a.y, 0.0f, 0.0f, color);
     vertices[1] = ar_vert(b.x, b.y, 0.0f, 0.0f, color);
-    ar_draw(vertices, 2, GL_LINES, vbos[0], apos, atex, acol, a_data0, a_data1);
+    ar_draw(shader, vertices, 2, GL_LINES, vbo);
 }
 
-void ar_bezier3_draw(const struct ar_bezier3 *curve, uint32_t color){
+void ar_bezier3_draw(struct ar_shader *shader, const struct ar_bezier3 *curve, uint32_t color){
     int n = 100;
     vec2 *points = (vec2*)malloc(sizeof*(points)*n);
     ar_bezier3_points(curve, points, n, 0.0, 1.0);
-    ar_draw_points(points, n, color, GL_LINE_STRIP);
+    ar_draw_points(shader, points, n, color, GL_LINE_STRIP);
     free(points);
 }
 
@@ -121,34 +120,34 @@ void ar_circle_points(vec2 *points, int n, vec2 center, double radius){
     }
 }
 
-void ar_draw_circle(vec2 center, double radius, uint32_t color){
+void ar_draw_circle(struct ar_shader *shader, vec2 center, double radius, uint32_t color){
     int n = 100;
     vec2 *points = (vec2*)malloc(sizeof*(points)*n);
     ar_circle_points(points, n, center, radius);
-    ar_draw_points(points, n, color, GL_LINE_LOOP);
+    ar_draw_points(shader, points, n, color, GL_LINE_LOOP);
     free(points);
 }
 
-void ar_draw_arc(struct ar_arc *arc, uint32_t color){
+void ar_draw_arc(struct ar_shader *shader, struct ar_arc *arc, uint32_t color){
     int n = 100;
     vec2 *points = (vec2*)malloc(n*sizeof(*points));
     ar_arc_points(arc, points, n, 0.0, 1.0);
-    ar_draw_points(points, n, color, GL_LINE_STRIP);
+    ar_draw_points(shader, points, n, color, GL_LINE_STRIP);
 }
 
-void ar_draw_arrow(vec2 a, vec2 b, double r, uint32_t color){
+void ar_draw_arrow(struct ar_shader *shader, vec2 a, vec2 b, double r, uint32_t color){
     vec2 d = v2scale(v2sub(b, a), r);
 
     vec2 points[3];
     points[0] = a;
     points[1] = b;
-    ar_draw_points(points, 2, color, GL_LINES);
+    ar_draw_points(shader, points, 2, color, GL_LINES);
 
     points[0] = b;
     points[1] = v2sub(b, v2add(v2smul(2.0, d), v2left(d)));
     points[2] = v2sub(b, v2sub(v2smul(2.0, d), v2left(d)));
 
-    ar_draw_points(points, 3, color, GL_TRIANGLES);
+    ar_draw_points(shader, points, 3, color, GL_TRIANGLES);
 }
 
 void arc_from_points_and_normal(struct ar_arc *arc, vec2 start, vec2 end, vec2 start_normal, int clockwise){
@@ -655,24 +654,26 @@ void ar_fit(const struct ar_bezier3 *curve, double max_distance, int max_depth, 
         printf("WARNING: Maximum curve subdivisions reached. Fit may be worse than max_distance.\n");
     }
 
+    struct ar_shader *arc_shader = &shaders[1];
+
     if (show_bezier){
-        ar_bezier3_draw(curve, AR_WHITE);
+        ar_bezier3_draw(arc_shader, curve, AR_WHITE);
     }
 
     if (show_control_points){
-        ar_draw_points(control_points, 4, AR_RGB(100, 100, 100), GL_LINE_STRIP);
+        ar_draw_points(arc_shader, control_points, 4, AR_RGB(100, 100, 100), GL_LINE_STRIP);
 
-        ar_draw_arrow(a, p[1], 5.0, AR_GREEN);
-        ar_draw_arrow(d, p[2], 5.0, AR_RED);
+        ar_draw_arrow(arc_shader, a, p[1], 5.0, AR_GREEN);
+        ar_draw_arrow(arc_shader, d, p[2], 5.0, AR_RED);
     }
 
     if (show_biarc){
-        ar_draw_arc(arcs + 0, AR_GREEN);
-        ar_draw_arc(arcs + 1, AR_RED);
+        ar_draw_arc(arc_shader, arcs + 0, AR_GREEN);
+        ar_draw_arc(arc_shader, arcs + 1, AR_RED);
     }
 
     if (show_solution_circle){
-        ar_draw_circle(center, radius, AR_YELLOW);
+        ar_draw_circle(arc_shader, center, radius, AR_YELLOW);
     }
 }
 
@@ -729,33 +730,6 @@ void ar_arc_vertices(const struct ar_arc *arc, struct ar_vertex *vertices, uint3
 
 #include "svg.h"
 
-void set_attributes(struct ar_vertex *vertices){
-    if (apos != -1){
-        glEnableVertexAttribArray(apos);
-        glVertexAttribPointer(apos, 2, GL_FLOAT, GL_FALSE, sizeof(*vertices), (char*)0);
-    }
-
-    if (atex != -1){
-        glEnableVertexAttribArray(atex);
-        glVertexAttribPointer(atex, 2, GL_FLOAT, GL_FALSE, sizeof(*vertices), (char*)8);
-    }
-
-    if (acol != -1){
-        glEnableVertexAttribArray(acol);
-        glVertexAttribPointer(acol, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(*vertices), (char*)16);
-    }
-
-    if (a_data0 != -1){
-        glEnableVertexAttribArray(a_data0);
-        glVertexAttribPointer(a_data0, 4, GL_FLOAT, GL_FALSE, sizeof(*vertices), (char*)20);
-    }
-
-    if (a_data1 != -1){
-        glEnableVertexAttribArray(a_data1);
-        glVertexAttribPointer(a_data1, 4, GL_FLOAT, GL_FALSE, sizeof(*vertices), (char*)36);
-    }
-}
-
 void prepare_svg(const char *path){
     ar_arc_list_init(output_arcs);
 
@@ -763,8 +737,8 @@ void prepare_svg(const char *path){
 
     int n_arcs = output_arcs->n;
 
-    n_vertices = n_arcs*(3 + 6);
-    struct ar_vertex *vertices = malloc(n_vertices*sizeof(*vertices));
+    n_vertices[0] = n_arcs*(3 + 6);
+    struct ar_vertex *vertices = malloc(n_vertices[0]*sizeof(*vertices));
     struct ar_vertex *vertex_pointer = vertices;
     struct ar_arc_list_node *node;
 
@@ -783,44 +757,57 @@ void prepare_svg(const char *path){
         ar_arc_vertices(arc, vertex_pointer, AR_GREEN);
         vertex_pointer += 6;
     }
-    n_vertices = vertex_pointer - vertices;
 
-    /* send curves to GPU */
-    glBindBuffer(GL_ARRAY_BUFFER, vbos[0]);
-    set_attributes(vertices);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(*vertices)*n_vertices, vertices);
-
-    /* send cover geometry to GPU */
-    struct ar_vertex rect_vertices[2*3];
-    ar_make_rect(rect_vertices, 0.0f, 0.0f, 4096.0f, 4096.0f, 0.0f, 0.0f, 0.0f, 0.0f, AR_BLACK);
-    glBufferSubData(GL_ARRAY_BUFFER, sizeof(*vertices)*n_vertices, sizeof(*rect_vertices)*2*6, rect_vertices);
+    n_vertices[0] = vertex_pointer - vertices;
+    vertex_arrays[0] = vertices;
 
     ar_arc_list_free(output_arcs);
-    free(vertices);
+}
+
+void upload_svg(void){
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    struct ar_vertex *vertices = vertex_arrays[0];
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(*vertices)*n_vertices[0], vertices);
+    ar_set_attributes(&shaders[1], vertices);
 }
 
 void render_svg(mat4 mvp, mat4 projection){
+    GL_CHECK
+    ar_shader_use(&shaders[1]);
+
+    GL_CHECK
     glEnable(GL_STENCIL_TEST);
     glClearStencil(0);
 
+    GL_CHECK
     /* prepare writing to stencil buffer */
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
     glStencilFunc(GL_NEVER, 0, 1);
     glStencilOp(GL_INVERT, GL_INVERT, GL_INVERT);
 
-    glBindBuffer(GL_ARRAY_BUFFER, vbos[0]);
-    upload_model_view_projection(mvp);
-    glDrawArrays(GL_TRIANGLES, 0, n_vertices);
+    GL_CHECK
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    ar_set_attributes(&shaders[1], NULL);
 
+    GL_CHECK
+    upload_model_view_projection(&shaders[1], mvp);
+    glDrawArrays(GL_TRIANGLES, 0, n_vertices[0]);
+
+    GL_CHECK
     /* prepare coloring stencil buffer */
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glStencilFunc(GL_EQUAL, 1, 1);
     glStencilOp(GL_ZERO, GL_ZERO, GL_ZERO);
 
-    upload_model_view_projection(projection);
-    glDrawArrays(GL_TRIANGLES, n_vertices, 2*3);
+    GL_CHECK
+    upload_model_view_projection(&shaders[1], projection);
+    struct ar_vertex rect_vertices[2*3];
+    ar_make_rect(rect_vertices, 0.0f, 0.0f, 4096.0f, 4096.0f, 0.0f, 0.0f, 0.0f, 0.0f, AR_BLACK);
+    ar_draw(&shaders[1], rect_vertices, 2*3, GL_TRIANGLES, vbo);
 
+    GL_CHECK
     glDisable(GL_STENCIL_TEST);
+    GL_CHECK
 }
 
 void prepare_curve_renderer(const char *path){
@@ -832,10 +819,10 @@ void prepare_curve_renderer(const char *path){
 
     assert(n % 2 == 0);
 
-    n_vertices = n/2*6;
+    n_vertices[1] = n/2*6;
 
     struct ar_arc *arcs = malloc(sizeof(*arcs)*n);
-    struct ar_vertex *vertices = malloc(sizeof(*vertices)*n_vertices);
+    struct ar_vertex *vertices = malloc(sizeof(*vertices)*n_vertices[1]);
 
     for (i = 0; i < n; i++){
         struct ar_arc *arc = &arcs[i];
@@ -867,10 +854,7 @@ void prepare_curve_renderer(const char *path){
         struct ar_arc *lower = &arcs[i + 0];
         struct ar_arc *upper = &arcs[i + 1];
 
-        struct ar_vertex v;
-        v.color = AR_BLACK;
-        v.u = 0.0f;
-        v.v = 0.0f;
+        struct ar_vertex v = ar_vert(0.0f, 0.0f, 0.0f, 0.0f, AR_BLACK);
 
         v.cx_lower = lower->center.x;
         v.cy_lower = lower->center.y;
@@ -923,14 +907,16 @@ void prepare_curve_renderer(const char *path){
     }
     free(arcs);
 
-    glBindBuffer(GL_ARRAY_BUFFER, vbos[0]);
-    set_attributes(vertices);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(*vertices)*n_vertices, vertices);
+    vertex_arrays[1] = vertices;
+}
 
-    free(vertices);
+void upload_curves(void){
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    struct ar_vertex *vertices = vertex_arrays[1];
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(*vertices)*n_vertices[1], vertices);
+    ar_set_attributes(&shaders[2], vertices);
 }
 
 void render_curves(void){
-    glBindBuffer(GL_ARRAY_BUFFER, vbos[0]);
-    glDrawArrays(GL_TRIANGLES, 0, n_vertices);
+    glDrawArrays(GL_TRIANGLES, 0, n_vertices[1]);
 }

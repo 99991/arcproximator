@@ -14,19 +14,12 @@ void ar_texture_init(struct ar_texture *texture, int width, int height, const vo
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+}
 
-/*
-    TODO channels
-
-    switch (n_channels){
-    case 1: glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, image.data()); break;
-    case 3: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB      , width, height, 0, GL_RGB      , GL_UNSIGNED_BYTE, image.data()); break;
-    case 4: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA     , width, height, 0, GL_RGBA     , GL_UNSIGNED_BYTE, image.data()); break;
-    default:
-        printf("Failed to create texture from image with %i color channels\n", n_channels);
-        break;
-    }
-    */
+void ar_texture_linear(struct ar_texture *texture){
+    ar_texture_bind(texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 }
 
 void ar_texture_bind(struct ar_texture *texture){

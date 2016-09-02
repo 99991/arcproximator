@@ -1,12 +1,85 @@
 #include "out_of_sight.h"
 
-#if 0
+#if 1
 #define USE_STENCIL_BUFFER
 #endif
 
-void on_frame(void){
+void bind_texture(struct ar_shader *shader, struct ar_texture *texture){
+    if (shader->uniforms[1] != -1){
+        glActiveTexture(GL_TEXTURE0);
+        ar_texture_bind(texture);
+        glUniform1i(shader->uniforms[1], 0);
+    }
+}
+
+void ar_texture_init_stencil(struct ar_texture *texture, int width, int height){
+    texture->width = width;
+    texture->height = height;
+    glGenTextures(1, &texture->id);
+
+    ar_texture_bind(texture);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL);
+}
+
+void init_fbo(void){
+    /* initialize fbo texture */
+    ar_texture_init(fbo_texture, fbo_width, fbo_height, NULL);
+    ar_texture_linear(fbo_texture);
+    ar_texture_init_stencil(fbo_stencil_texture, fbo_width, fbo_height);
+
+    /* initialize fbo */
     GL_CHECK
-    mat4 projection = m4_ortho2d(0.0f, window.width, window.height, 0.0f);
+    glGenFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo_texture->id, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, fbo_stencil_texture->id, 0);
+
+    assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void draw_fbo(void){
+    glViewport(0, 0, window.width, window.height);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+    ar_shader_use(&shaders[0]);
+    GL_CHECK
+    upload_model_view_projection(&shaders[0], m4id());
+    GL_CHECK
+    bind_texture(&shaders[0], fbo_texture);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    GL_CHECK
+    struct ar_vertex vertices[2*3];
+    ar_make_rect(vertices, -1, -1, +1, +1, 0, 0, 1, 1, AR_WHITE);
+    ar_draw(&shaders[0], vertices, 2*3, GL_TRIANGLES, vbo);
+    GL_CHECK
+}
+
+void on_frame(void){
+    init_fbo();
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+#ifdef USE_STENCIL_BUFFER
+    upload_svg();
+#else
+    upload_curves();
+#endif
+
+    GL_CHECK
+    //mat4 projection = m4_ortho2d(0.0f, window.width, window.height, 0.0f);
+    glViewport(0, 0, fbo_width, fbo_height);
+    mat4 projection = m4_ortho2d(0.0f, 800, 800, 0.0f);
     mat23 world_to_screen = window.world_to_screen;
     mat4 modelview = m4m23(world_to_screen);
     mat4 mvp = m4mul(projection, modelview);
@@ -19,18 +92,16 @@ void on_frame(void){
     window.width = glutGet(GLUT_WINDOW_WIDTH);
     window.height = glutGet(GLUT_WINDOW_HEIGHT);
 
-    ar_shader_use(arc_shader);
+#ifdef USE_STENCIL_BUFFER
+    struct ar_shader *shader = &shaders[1];
+#else
+    struct ar_shader *shader = &shaders[2];
+#endif
+    ar_shader_use(shader);
     GL_CHECK
 
-    upload_model_view_projection(mvp);
+    upload_model_view_projection(shader, mvp);
     GL_CHECK
-
-    if (utex0 != -1){
-        glActiveTexture(GL_TEXTURE0);
-        ar_texture_bind(texture);
-        glUniform1i(utex0, 0);
-    }
-
 
     GL_CHECK
     GLuint timeElapsedQuery;
@@ -45,9 +116,16 @@ void on_frame(void){
 #else
     render_curves();
 #endif
+
     glEndQuery(GL_TIME_ELAPSED);
 
+    draw_fbo();
+
     glutSwapBuffers();
+
+    ar_texture_free(fbo_texture);
+    ar_texture_free(fbo_stencil_texture);
+    glDeleteFramebuffers(1, &fbo);
 
     GL_CHECK
     uint64_t t;
@@ -140,99 +218,99 @@ void on_key_up(unsigned char key, int x, int y){
     window.is_key_down[key] = 0;
 }
 
-int main(int argc, char **argv){
-#ifdef USE_STENCIL_BUFFER
-    const char *vert_src =
-        "#version 120\r\n"
-        AR_STR(
-        attribute vec4 apos;
-        attribute vec2 atex;
-        attribute vec4 acol;
+const char *vert_src =
+    "#version 120\r\n"
+    AR_STR(
+    attribute vec4 a_data0;
+    attribute vec4 a_data1;
+    attribute vec4 a_data2;
+    attribute vec4 a_data3;
 
-        varying vec2 vtex;
-        varying vec4 vcol;
+    varying vec4 v_data0;
+    varying vec4 v_data1;
+    varying vec4 v_data2;
+    varying vec4 v_data3;
 
-        uniform mat4 umvp;
+    uniform mat4 u_0;
 
-        void main(){
-            vtex = atex;
-            vcol = acol;
-            gl_Position = umvp*vec4(apos.xyz, 1.0);
-        }
-    );
+    void main(){
+        v_data0 = a_data0;
+        v_data1 = a_data1;
+        v_data2 = a_data2;
+        v_data3 = a_data3;
 
+        gl_Position = u_0*vec4(a_data0.xy, 0.0, 1.0);
+    }
+);
+
+void make_texture_shader(struct ar_shader *shader){
     const char *frag_src =
         "#version 120\r\n"
         AR_STR(
-        varying vec2 vtex;
-        varying vec4 vcol;
+        varying vec4 v_data0;
+        varying vec4 v_data1;
+        varying vec4 v_data2;
+        varying vec4 v_data3;
 
-        uniform sampler2D utex0;
+        uniform sampler2D u_1;
 
         void main(){
-            float r = dot(vtex, vtex);
+            gl_FragColor = texture2D(u_1, v_data0.zw) * v_data1;
+        }
+    );
+
+    ar_shader_init(shader, vert_src, frag_src);
+}
+
+void make_stencil_shader(struct ar_shader *shader){
+    const char *frag_src =
+        "#version 120\r\n"
+        AR_STR(
+        varying vec4 v_data0;
+        varying vec4 v_data1;
+        varying vec4 v_data2;
+        varying vec4 v_data3;
+
+        uniform sampler2D u_1;
+
+        void main(){
+            vec2 uv = v_data0.zw;
+            vec4 color = v_data1;
+
+            float r = dot(uv, uv);
 
             if (r > 1.0) discard;
 
-            gl_FragColor = vcol;
-            /*
-            gl_FragColor = texture2D(utex0, vtex) * vcol;
-            */
-        }
-    );
-#else
-    const char *vert_src =
-        "#version 120\r\n"
-        AR_STR(
-        attribute vec4 apos;
-        attribute vec2 atex;
-        attribute vec4 acol;
-        attribute vec4 a_data0;
-        attribute vec4 a_data1;
-
-        varying vec2 vpos;
-        varying vec2 vtex;
-        varying vec4 vcol;
-
-        varying vec4 v_data0;
-        varying vec4 v_data1;
-
-        uniform mat4 umvp;
-
-        void main(){
-            v_data0 = a_data0;
-            v_data1 = a_data1;
-            vtex = atex;
-            vcol = acol;
-            vpos = apos.xy;
-            vec4 pos = umvp*vec4(apos.xyz, 1.0);
-            gl_Position = pos;
+            gl_FragColor = color;
+            //gl_FragColor = texture2D(u_1, uv) * color;
         }
     );
 
+    ar_shader_init(shader, vert_src, frag_src);
+}
+
+void make_arc_shader(struct ar_shader *shader){
     const char *frag_src =
         "#version 120\r\n"
         AR_STR(
-        varying vec2 vpos;
-        varying vec2 vtex;
-        varying vec4 vcol;
-
         varying vec4 v_data0;
         varying vec4 v_data1;
+        varying vec4 v_data2;
+        varying vec4 v_data3;
 
-        uniform sampler2D utex0;
+        uniform sampler2D u_1;
 
         void main(){
-            vec2 p = vpos;
+            vec2 p = v_data0.xy;
 
-            vec2 c_lower = v_data0.xy;
-            vec2 c_upper = v_data0.zw;
+            vec2 c_lower = v_data2.xy;
+            vec2 c_upper = v_data2.zw;
 
-            float r_lower = v_data1.x;
-            float r_upper = v_data1.y;
+            float r_lower = v_data3.x;
+            float r_upper = v_data3.y;
 
-            float type_lower = v_data1.z;
-            float type_upper = v_data1.w;
+            float type_lower = v_data3.z;
+            float type_upper = v_data3.w;
 
             vec2 pa = p - c_lower;
             vec2 pb = p - c_upper;
@@ -247,30 +325,19 @@ int main(int argc, char **argv){
 
             float alpha = ya <= pa.y && pb.y <= yb ? 1.0 : 0.0;
 
-            vec4 color = vcol;
+            //vec4 color = texture2D(u_1, v_data0.zw) * v_data1;
+            vec4 color = v_data1;
 
             color.a *= alpha;
 
             gl_FragColor = color;
-/*
-            vec4 color = texture2D(utex0, vtex) * vcol;
-
-            color.a *= alpha;
-
-            gl_FragColor = color;
-            */
         }
     );
-#endif
 
-    int x, y;
-    int nx = 16;
-    int ny = 16;
-    uint32_t texture_data[16*16];
-    for (y = 0; y < ny; y++) for (x = 0; x < nx; x++){
-        texture_data[x + y*nx] =  0xffffffff;
-    }
+    ar_shader_init(shader, vert_src, frag_src);
+}
 
+int main(int argc, char **argv){
     window.width = 800;
     window.height = 800;
     window.world_to_screen = m23id();
@@ -287,27 +354,12 @@ int main(int argc, char **argv){
 
     glewInit();
 
-    ar_shader_init(arc_shader, vert_src, frag_src);
+    make_texture_shader(&shaders[0]);
+    make_stencil_shader(&shaders[1]);
+    make_arc_shader(&shaders[2]);
 
-    umvp  = glGetUniformLocation(arc_shader->program, "umvp");
-    utex0 = glGetUniformLocation(arc_shader->program, "utex0");
-    apos  = glGetAttribLocation(arc_shader->program, "apos");
-    atex  = glGetAttribLocation(arc_shader->program, "atex");
-    acol  = glGetAttribLocation(arc_shader->program, "acol");
-
-#ifdef USE_STENCIL_BUFFER
-#else
-    a_data0 = glGetAttribLocation(arc_shader->program, "a_data0");
-    a_data1 = glGetAttribLocation(arc_shader->program, "a_data1");
-#endif
-
-    ar_texture_init(texture, nx, ny, texture_data);
-
-    glGenBuffers(1, &vbos[0]);
-    glBindBuffer(GL_ARRAY_BUFFER, vbos[0]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(struct ar_vertex)*MAX_VERTICES, NULL, GL_STATIC_DRAW);
-    glGenBuffers(1, &vbos[1]);
-    glBindBuffer(GL_ARRAY_BUFFER, vbos[1]);
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(struct ar_vertex)*MAX_VERTICES, NULL, GL_STATIC_DRAW);
 
     glutCreateMenu(menu_callback);
@@ -323,6 +375,7 @@ int main(int argc, char **argv){
     glutMouseFunc(on_button);
     glutKeyboardFunc(on_key_down);
     glutKeyboardUpFunc(on_key_up);
+    glutDisplayFunc(on_frame);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -333,7 +386,6 @@ int main(int argc, char **argv){
     prepare_curve_renderer("development/py/arcs.txt");
 #endif
 
-    glutDisplayFunc(on_frame);
     work(0);
     glutMainLoop();
     return 0;

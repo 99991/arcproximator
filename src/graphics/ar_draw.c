@@ -1,35 +1,50 @@
 #include "ar_draw.h"
 
-void ar_draw(const struct ar_vertex *vertices, int n_vertices, GLenum mode, GLint vbo, GLint apos, GLint atex, GLint acol, GLint a_data0, GLint a_data1){
+void ar_enable_attributes(struct ar_shader *shader){
+    ar_shader_use(shader);
+
+    int i;
+    for (i = 0; i < AR_MAX_ATTRIBUTES; i++){
+        int location = shader->attributes[i];
+        if (location != -1){
+            glEnableVertexAttribArray(location);
+        }
+    }
+}
+
+void ar_disable_attributes(struct ar_shader *shader){
+    ar_shader_use(shader);
+
+    int i;
+    for (i = 0; i < AR_MAX_ATTRIBUTES; i++){
+        int location = shader->attributes[i];
+        if (location != -1){
+            glEnableVertexAttribArray(location);
+        }
+    }
+}
+
+void ar_set_attributes(struct ar_shader *shader, const struct ar_vertex *vertices){
+    ar_shader_use(shader);
+
+    int i;
+    for (i = 0; i < AR_MAX_ATTRIBUTES; i++){
+        int location = shader->attributes[i];
+        if (location != -1){
+            glEnableVertexAttribArray(location);
+            if (!vertices) continue;
+            glVertexAttribPointer(location, 4, GL_FLOAT, GL_FALSE, sizeof(*vertices), (char*)(i*16));
+        }
+    }
+}
+
+void ar_draw(struct ar_shader *shader, const struct ar_vertex *vertices, int n_vertices, GLenum mode, GLint vbo){
     if (n_vertices == 0) return;
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(*vertices)*n_vertices, vertices);
 
-    if (apos != -1){
-        glEnableVertexAttribArray(apos);
-        glVertexAttribPointer(apos, 2, GL_FLOAT, GL_FALSE, sizeof(*vertices), (char*)0);
-    }
-
-    if (atex != -1){
-        glEnableVertexAttribArray(atex);
-        glVertexAttribPointer(atex, 2, GL_FLOAT, GL_FALSE, sizeof(*vertices), (char*)8);
-    }
-
-    if (acol != -1){
-        glEnableVertexAttribArray(acol);
-        glVertexAttribPointer(acol, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(*vertices), (char*)16);
-    }
-
-    if (a_data0 != -1){
-        glEnableVertexAttribArray(a_data0);
-        glVertexAttribPointer(a_data0, 4, GL_FLOAT, GL_FALSE, sizeof(*vertices), (char*)20);
-    }
-
-    if (a_data1 != -1){
-        glEnableVertexAttribArray(a_data1);
-        glVertexAttribPointer(a_data1, 4, GL_FLOAT, GL_FALSE, sizeof(*vertices), (char*)36);
-    }
+    ar_set_attributes(shader, vertices);
 
     glDrawArrays(mode, 0, n_vertices);
 }

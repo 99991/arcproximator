@@ -109,18 +109,19 @@
 1468256235 c:\users\john\desktop\arcproximator\graphics\my_vertex.h
 	<stdint.h>
 
-1472766906 source:c:\users\john\desktop\arcproximator\src\graphics\ar_draw.c
+1472810056 source:c:\users\john\desktop\arcproximator\src\graphics\ar_draw.c
 	"ar_draw.h"
 
-1472766920 c:\users\john\desktop\arcproximator\src\graphics\ar_draw.h
+1472810056 c:\users\john\desktop\arcproximator\src\graphics\ar_draw.h
 	"ar_gl.h"
 	"ar_vertex.h"
+	"ar_shader.h"
 
 1472766465 c:\users\john\desktop\arcproximator\src\graphics\ar_gl.h
 	<GL/glew.h>
 	<GL/freeglut.h>
 
-1472762526 c:\users\john\desktop\arcproximator\src\graphics\ar_vertex.h
+1472805180 c:\users\john\desktop\arcproximator\src\graphics\ar_vertex.h
 	<stdint.h>
 
 1472396523 source:c:\users\john\desktop\arcproximator\src\graphics\ar_gl.c
@@ -128,19 +129,19 @@
 	<stdio.h>
 	<assert.h>
 
-1472396523 source:c:\users\john\desktop\arcproximator\src\graphics\ar_shader.c
+1472809396 source:c:\users\john\desktop\arcproximator\src\graphics\ar_shader.c
 	"ar_shader.h"
 	<stdio.h>
 	<string.h>
 	<stdlib.h>
 
-1472396523 c:\users\john\desktop\arcproximator\src\graphics\ar_shader.h
+1472806332 c:\users\john\desktop\arcproximator\src\graphics\ar_shader.h
 	"ar_gl.h"
 
-1472396523 source:c:\users\john\desktop\arcproximator\src\graphics\ar_texture.c
+1472814023 source:c:\users\john\desktop\arcproximator\src\graphics\ar_texture.c
 	"ar_texture.h"
 
-1472396523 c:\users\john\desktop\arcproximator\src\graphics\ar_texture.h
+1472813829 c:\users\john\desktop\arcproximator\src\graphics\ar_texture.h
 	"ar_gl.h"
 
 1468186576 source:c:\users\john\desktop\arcproximator\src\gl\glew.c
@@ -177,12 +178,12 @@
 	<X11/Xmd.h>
 	<GL/glew.h>
 
-1472767706 source:c:\users\john\desktop\arcproximator\src\main.c
+1472814762 source:c:\users\john\desktop\arcproximator\src\main.c
 	"out_of_sight.h"
 
 1468333818 urand_kerner_roots.h"
 
-1472396523 c:\users\john\desktop\arcproximator\src\graphics\ar_color.h
+1472805180 c:\users\john\desktop\arcproximator\src\graphics\ar_color.h
 	<stdint.h>
 	<stddef.h>
 
@@ -470,13 +471,13 @@
 	<stdlib.h>
 	<string.h>
 
-1472396523 source:c:\users\john\desktop\arcproximator\src\graphics\ar_color.c
+1472805180 source:c:\users\john\desktop\arcproximator\src\graphics\ar_color.c
 	"ar_color.h"
 	"../util/ar_util.h"
 	<stdio.h>
 	<string.h>
 
-1472768416 c:\users\john\desktop\arcproximator\src\out_of_sight.h
+1472814849 c:\users\john\desktop\arcproximator\src\out_of_sight.h
 	"math/ar_bezier3.h"
 	"math/ar_arc.h"
 	"graphics/ar_shader.h"

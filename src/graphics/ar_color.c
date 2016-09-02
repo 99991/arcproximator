@@ -32,3 +32,10 @@ uint32_t ar_color_from_hex_n(const char *hex, size_t n){
 uint32_t ar_color_from_hex(const char *hex){
     return ar_color_from_hex_n(hex, strlen(hex));
 }
+
+void ar_color_to_float(uint32_t color, float *rgba){
+    rgba[0] = ((color >> 0*8) & 0xff) / 255.0f;
+    rgba[1] = ((color >> 1*8) & 0xff) / 255.0f;
+    rgba[2] = ((color >> 2*8) & 0xff) / 255.0f;
+    rgba[3] = ((color >> 3*8) & 0xff) / 255.0f;
+}

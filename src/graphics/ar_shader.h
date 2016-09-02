@@ -3,10 +3,16 @@
 
 #include "ar_gl.h"
 
+#define AR_MAX_ATTRIBUTES 4
+#define AR_MAX_UNIFORMS   2
+
 struct ar_shader {
     GLuint program;
     GLuint vertex_shader;
     GLuint fragment_shader;
+
+    GLint uniforms[AR_MAX_ATTRIBUTES];
+    GLint attributes[AR_MAX_ATTRIBUTES];
 };
 
 void ar_shader_init(

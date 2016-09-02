@@ -52,11 +52,29 @@ void ar_shader_init(
 ){
     shader->vertex_shader = shader_compile(vert_src, GL_VERTEX_SHADER);
     shader->fragment_shader = shader_compile(frag_src, GL_FRAGMENT_SHADER);
+
     shader->program = glCreateProgram();
+
     glAttachShader(shader->program, shader->vertex_shader);
     glAttachShader(shader->program, shader->fragment_shader);
+
     glLinkProgram(shader->program);
+
     if(!shader_link_check(shader->program)) exit(-1);
+
+    ar_shader_use(shader);
+
+    int i;
+    for (i = 0; i < AR_MAX_ATTRIBUTES; i++){
+        char name[] = "a_data0";
+        name[6] = '0' + i;
+        shader->attributes[i] = glGetAttribLocation(shader->program, name);
+    }
+    for (i = 0; i < AR_MAX_UNIFORMS; i++){
+        char name[] = "u_0";
+        name[2] = '0' + i;
+        shader->uniforms[i] = glGetUniformLocation(shader->program, name);
+    }
 }
 
 void ar_shader_use(struct ar_shader *shader){

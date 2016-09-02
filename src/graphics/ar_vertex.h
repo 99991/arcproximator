@@ -9,7 +9,7 @@ struct ar_vertex {
     float u;
     float v;
 
-    uint32_t color;
+    float color[4];
 
     float cx_lower;
     float cy_lower;
