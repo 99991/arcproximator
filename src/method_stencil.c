@@ -273,7 +273,7 @@ void ar_fit(const struct ar_bezier3 *curve, double max_distance, int max_depth, 
 
     struct ar_bezier3_dist_info info = ar_bezier3_arcs_distance(curve, arcs);
 
-    if (max_depth > 0 && info.distance_squared > max_distance){
+    if (max_depth > 0 && sqrt(info.distance_squared) > max_distance){
         struct ar_bezier3 curves[2];
         ar_bezier3_split(curve, info.t, curves);
         ar_fit(curves + 0, max_distance, max_depth - 1, output_arcs);

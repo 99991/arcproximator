@@ -18,6 +18,8 @@
 
 #include <GL/freeglut.h>
 
+#define DRAW_SMOOTH
+
 struct ar_window {
     int width;
     int height;
@@ -36,6 +38,7 @@ int fbo_width = 64;
 int fbo_height = 64;
 struct ar_texture fbo_texture[1];
 struct ar_texture fbo_stencil_texture[1];
+int max_fbo_size = 4096;
 
 /*
 0: stencil buffer
@@ -213,9 +216,11 @@ void bind_texture(struct ar_shader *shader, struct ar_texture *texture){
 
 void init_fbo(void){
     /* initialize fbo texture */
-    ar_texture_init(fbo_texture, fbo_width, fbo_height, NULL);
-    //ar_texture_linear(fbo_texture);
-    ar_texture_init_stencil(fbo_stencil_texture, fbo_width, fbo_height);
+    ar_texture_init(fbo_texture, max_fbo_size, max_fbo_size, NULL);
+#ifdef DRAW_SMOOTH
+    ar_texture_linear(fbo_texture);
+#endif
+    ar_texture_init_stencil(fbo_stencil_texture, max_fbo_size, max_fbo_size);
 
     /* initialize fbo */
     GL_CHECK
@@ -241,7 +246,9 @@ void draw_fbo(void){
     ar_upload_model_view_projection(&shaders[0], m4id());
     GL_CHECK
     bind_texture(&shaders[0], fbo_texture);
-    //glGenerateMipmap(GL_TEXTURE_2D);
+#ifdef DRAW_SMOOTH
+    glGenerateMipmap(GL_TEXTURE_2D);
+#endif
     GL_CHECK
     struct ar_vertex vertices[2*3];
     ar_make_rect(vertices, -1, -1, +1, +1, 0, 0, 1, 1, AR_WHITE);
@@ -266,8 +273,8 @@ void on_frame(void){
 
     fbo_width = fbo_height = sqrt(pixels);
 
-    init_fbo();
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    glViewport(0, 0, fbo_width, fbo_height);
 
     struct ar_shader *shader = NULL;
 
@@ -323,10 +330,6 @@ void on_frame(void){
     draw_fbo();
 
     glutSwapBuffers();
-
-    ar_texture_free(fbo_texture);
-    ar_texture_free(fbo_stencil_texture);
-    glDeleteFramebuffers(1, &fbo);
 
     GL_CHECK
     uint64_t t;
@@ -570,6 +573,8 @@ int main(int argc, char **argv){
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    init_fbo();
 
     prepare_svg("development/py/beziers.svg");
     prepare_arcs_renderer("development/py/arcs.txt");

@@ -45,7 +45,7 @@ class CubicBezier(object):
         return (curve0, curve1)
 
 
-def subdivide(curve, max_err_squared, arcs, depth=10):
+def subdivide(curve, max_err, arcs, depth=10):
     p0, p1, p2, p3 = curve.points
 
     u0 = (p1 - p0).normalized()
@@ -74,10 +74,10 @@ def subdivide(curve, max_err_squared, arcs, depth=10):
         arcs.append(arc0)
         arcs.append(arc1)
     else:
-        if d2 < max_err_squared:
+        if sqrt(d2) < max_err:
             arcs.append(arc0)
             arcs.append(arc1)
         else:
             curve0, curve1 = curve.split(t)
-            subdivide(curve0, max_err_squared, arcs, depth - 1)
-            subdivide(curve1, max_err_squared, arcs, depth - 1)
+            subdivide(curve0, max_err, arcs, depth - 1)
+            subdivide(curve1, max_err, arcs, depth - 1)

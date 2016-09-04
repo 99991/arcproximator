@@ -489,14 +489,6 @@ def unleash_face_eater(curves):
                 #print(k, len(face))
                 break
 
-    if 0:
-        d = defaultdict(int)
-        for face in faces:
-            d[len(face)] += 1
-
-        for n, m in d.items():
-            print("%d faces with %d curves"%(m, n))
-
     return faces
 
 def save(path, content):
@@ -557,7 +549,7 @@ def triangulate(mouse, points):
         bezier = CubicBezier(control_points)
         beziers.append(bezier)
         
-        subdivide(bezier, 1.0, curves)
+        subdivide(bezier, 0.1, curves)
 
     path = save_svg("beziers.svg", beziers)
     save("path.txt", path)
