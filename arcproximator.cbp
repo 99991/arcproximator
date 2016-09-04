@@ -67,6 +67,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/graphics/ar_texture.h" />
+		<Unit filename="src/graphics/ar_vertex.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="src/graphics/ar_vertex.h" />
 		<Unit filename="src/main.c">
 			<Option compilerVar="CC" />
@@ -103,7 +106,18 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/math/vec2.h" />
-		<Unit filename="src/out_of_sight.h" />
+		<Unit filename="src/method_arcs.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/method_arcs.h" />
+		<Unit filename="src/method_segments.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/method_segments.h" />
+		<Unit filename="src/method_stencil.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/method_stencil.h" />
 		<Unit filename="src/svg.h" />
 		<Unit filename="src/util/ar_array.h" />
 		<Unit filename="src/util/ar_list.h" />

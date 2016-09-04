@@ -1,5 +1,3 @@
-/* TODO split into *.c and *.h */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

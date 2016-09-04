@@ -47,31 +47,26 @@ class CubicBezier(object):
 
 def subdivide(curve, max_err_squared, arcs, depth=10):
     p0, p1, p2, p3 = curve.points
-    p10 = p1 - p0
-    p21 = p2 - p1
-    p23 = p2 - p3
 
-    tangent0 = p10.normalized()
-    tangent1 = p23.normalized()
+    u0 = (p1 - p0).normalized()
+    u1 = (p3 - p2).normalized()
 
-    co, si, center = rotation_and_center(p0, p3, tangent0, tangent1)
+    #_, _, center = rotation_and_center(p0, p3, u0, u1)
+    v = u0.det(u1)/(u0.dot(u1) - 1)*(p0 - p3)
+    x = (p0.x + p3.x - v.y)/2
+    y = (p0.y + p3.y + v.x)/2
+
+    center = Point(x, y)
+    
     radius = p0.dist(center)
 
     join = curve.at(0.5)
 
-    join = center + (join - center).scaled(radius)
+    join = center + radius*(join - center).normalized()
 
-    clockwise0 = join.is_right_of(p0, p1)
-    clockwise1 = join.is_right_of(p3, p2)
+    arc0 = arc_from_points_and_normal(p0, join, u0.left(), join.is_left_of(p1, p0), False)
+    arc1 = arc_from_points_and_normal(p3, join, u1.left(), join.is_right_of(p3, p2), True)
 
-    normal0 = tangent0.right() if clockwise0 else tangent0.left()
-    normal1 = tangent1.right() if clockwise1 else tangent1.left()
-
-    arc0 = arc_from_points_and_normal(p0, join, normal0, clockwise0)
-    arc1 = arc_from_points_and_normal(p3, join, normal1, clockwise1)
-
-    arc1 = reversed(arc1)
-    
     d2, t, p, q = curve.dist2(arc0, arc1)
 
     if depth == 0:

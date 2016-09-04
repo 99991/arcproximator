@@ -40,17 +40,17 @@ b = center.polar(b_angle, radius)
 a_tangent = Point(+1, +2).normalized()
 b_tangent = Point(-2, +1).normalized()
 
-_, _, center = rotation_and_center(a, b, a_tangent, -b_tangent)
+_, _, center = rotation_and_center(a, b, a_tangent, b_tangent)
 radius = center.dist(a)
 circle = patches.Arc(center, radius*2, radius*2, 0.0, 0, 360)
 g.add_patch(circle)
 
 def draw_from_join(j, cw0, cw1, ls):
     a_normal = a_tangent.left()
-    b_normal = b_tangent.right()
+    b_normal = b_tangent.left()
 
-    arc0 = arc_from_points_and_normal(a, j, a_normal, cw0)
-    arc1 = arc_from_points_and_normal(b, j, b_normal, cw1)
+    arc0 = arc_from_points_and_normal(a, j, a_normal, cw0, False)
+    arc1 = arc_from_points_and_normal(b, j, b_normal, cw1, True)
 
     plt.plot([j.x], [j.y], 'o', lw=1, color='gray', ms=10)
 
@@ -72,10 +72,14 @@ g.text(a.x + a_tangent.x + 3, a.y + a_tangent.y + 3, r'$\mathbf{u}_0$', fontsize
 g.text(b.x + b_tangent.x - 5, b.y + b_tangent.y + 5, r'$\mathbf{u}_1$', fontsize=20)
 g.text(a.x + 10, a.y - 5, r'$\mathbf{a}_0$', fontsize=20)
 g.text(b.x - 5, b.y - 20, r'$\mathbf{b}_1$', fontsize=20)
+g.text(-35, -31, r'$\mathbf{r}_2$', fontsize=20)
+g.text(32, -25, r'$\mathbf{r}_2$', fontsize=20)
 
 g.text(center.x - 5, center.y - 20, r'$\mathbf{c}_2$', fontsize=20)
 
 plt.plot([a.x, b.x, center.x], [a.y, b.y, center.y], 'o', lw=1, color='gray', ms=10)
+
+plt.plot([a.x, center.x, b.x], [a.y, center.y, b.y], '--', color='gray')
 
 plt.plot([center.x], [center.y], 'o', lw=1, color='gray', ms=10)
 g.text(center.x - 5, center.y - 20, r'$\mathbf{c}_2$', fontsize=20)

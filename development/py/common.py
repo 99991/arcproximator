@@ -384,19 +384,21 @@ def arc_from_points(a, b, c):
     
     return Arc(center, a, c, b.is_left_of(a, c))
 
-def arc_from_points_and_normal(a, b, a_normal, clockwise):
+def arc_from_points_and_normal(a, b, a_normal, clockwise, reverse):
     ba = b - a
-    d = ba.dot(a_normal)
     
-    radius = ba.dot(ba)*0.5/d
+    radius = ba.dot(ba)/(2.0*ba.dot(a_normal))
     
     center = a + radius*a_normal
-    
-    return Arc(center, a, b, clockwise)
 
-def rotation_and_center(a, b, tangent0, tangent1):
-    co = tangent0.dot(tangent1)
-    si = tangent0.det(tangent1)
+    if reverse:
+        return Arc(center, a, b, clockwise)
+    else:
+        return Arc(center, b, a, not clockwise)
+
+def rotation_and_center(a, b, u0, u1):
+    co = -u0.dot(u1)
+    si = -u0.det(u1)
 
     x = (a.x + b.x - si*(a.y - b.y)/(1.0 + co))*0.5
     y = (a.y + b.y + si*(a.x - b.x)/(1.0 + co))*0.5

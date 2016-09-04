@@ -3,6 +3,8 @@
 
 #include "ar_gl.h"
 
+#include "../math/mat4.h"
+
 #define AR_MAX_ATTRIBUTES 4
 #define AR_MAX_UNIFORMS   2
 
@@ -23,4 +25,5 @@ void ar_shader_init(
 
 void ar_shader_use(struct ar_shader *shader);
 
+void ar_upload_model_view_projection(struct ar_shader *shader, mat4 mvp);
 #endif

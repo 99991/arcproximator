@@ -80,3 +80,16 @@ void ar_shader_init(
 void ar_shader_use(struct ar_shader *shader){
     glUseProgram(shader->program);
 }
+
+void ar_upload_model_view_projection(struct ar_shader *shader, mat4 mvp){
+    /* upload as double not available everywhere */
+    float data[16];
+    int i, j;
+    for (i = 0; i < 4; i++){
+        for (j = 0; j < 4; j++){
+            /* column major matrix */
+            data[i + j*4] = m4at(mvp, i, j);
+        }
+    }
+    glUniformMatrix4fv(shader->uniforms[0], 1, 0, data);
+}

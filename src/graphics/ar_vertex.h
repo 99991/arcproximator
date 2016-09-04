@@ -23,4 +23,14 @@ struct ar_vertex {
     float type_upper;
 };
 
+struct ar_vertex ar_vert(float x, float y, float u, float v, uint32_t color);
+
+
+void ar_make_rect(
+    struct ar_vertex *vertices,
+    float x0, float y0, float x1, float y1,
+    float u0, float v0, float u1, float v1,
+    uint32_t color
+);
+
 #endif

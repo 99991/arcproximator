@@ -562,6 +562,11 @@ def triangulate(mouse, points):
     path = save_svg("beziers.svg", beziers)
     save("path.txt", path)
 
+    control_points = [bezier.points for bezier in beziers]
+    s = ["%f %f %f %f %f %f %f %f"%(a.x, a.y, b.x, b.y, c.x, c.y, d.x, d.y) for a, b, c, d in control_points]
+    s = "\n".join(s)
+    save("beziers.txt", "%d\n"%len(control_points) + s)
+
     curves.append(Segment(points[0], points[-1]))
 
     curves = make_curves_x_monotone(curves)

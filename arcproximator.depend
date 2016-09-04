@@ -121,7 +121,7 @@
 	<GL/glew.h>
 	<GL/freeglut.h>
 
-1472805180 c:\users\john\desktop\arcproximator\src\graphics\ar_vertex.h
+1472831935 c:\users\john\desktop\arcproximator\src\graphics\ar_vertex.h
 	<stdint.h>
 
 1472396523 source:c:\users\john\desktop\arcproximator\src\graphics\ar_gl.c
@@ -129,19 +129,20 @@
 	<stdio.h>
 	<assert.h>
 
-1472809396 source:c:\users\john\desktop\arcproximator\src\graphics\ar_shader.c
+1472831997 source:c:\users\john\desktop\arcproximator\src\graphics\ar_shader.c
 	"ar_shader.h"
 	<stdio.h>
 	<string.h>
 	<stdlib.h>
 
-1472806332 c:\users\john\desktop\arcproximator\src\graphics\ar_shader.h
+1472831997 c:\users\john\desktop\arcproximator\src\graphics\ar_shader.h
 	"ar_gl.h"
+	"../math/mat4.h"
 
-1472814023 source:c:\users\john\desktop\arcproximator\src\graphics\ar_texture.c
+1472831715 source:c:\users\john\desktop\arcproximator\src\graphics\ar_texture.c
 	"ar_texture.h"
 
-1472813829 c:\users\john\desktop\arcproximator\src\graphics\ar_texture.h
+1472831715 c:\users\john\desktop\arcproximator\src\graphics\ar_texture.h
 	"ar_gl.h"
 
 1468186576 source:c:\users\john\desktop\arcproximator\src\gl\glew.c
@@ -178,8 +179,24 @@
 	<X11/Xmd.h>
 	<GL/glew.h>
 
-1472814762 source:c:\users\john\desktop\arcproximator\src\main.c
-	"out_of_sight.h"
+1472840044 source:c:\users\john\desktop\arcproximator\src\main.c
+	"method_stencil.h"
+	"method_segments.h"
+	"method_arcs.h"
+	"math/ar_bezier3.h"
+	"math/ar_arc.h"
+	"graphics/ar_shader.h"
+	"graphics/ar_draw.h"
+	"graphics/ar_texture.h"
+	"graphics/ar_color.h"
+	"math/vec2.h"
+	"math/mat23.h"
+	"math/mat4.h"
+	"math/ar_polynomial.h"
+	<math.h>
+	<assert.h>
+	<stdio.h>
+	<GL/freeglut.h>
 
 1468333818 urand_kerner_roots.h"
 
@@ -203,18 +220,18 @@
 1472396523 c:\users\john\desktop\arcproximator\src\math\mat4.h
 	"mat23.h"
 
-1472396523 c:\users\john\desktop\arcproximator\src\math\ar_bezier3.h
+1472832130 c:\users\john\desktop\arcproximator\src\math\ar_bezier3.h
 	"vec2.h"
 
-1472396523 source:c:\users\john\desktop\arcproximator\src\math\ar_bezier3.c
+1472832130 source:c:\users\john\desktop\arcproximator\src\math\ar_bezier3.c
 	"ar_bezier3.h"
 
 1468330743 3.h"
 
-1472396523 source:c:\users\john\desktop\arcproximator\src\math\ar_arc.c
+1472832130 source:c:\users\john\desktop\arcproximator\src\math\ar_arc.c
 	"ar_arc.h"
 
-1472396523 c:\users\john\desktop\arcproximator\src\math\ar_arc.h
+1472832130 c:\users\john\desktop\arcproximator\src\math\ar_arc.h
 	"vec2.h"
 	<stdint.h>
 	"../graphics/ar_color.h"
@@ -326,7 +343,7 @@
 	<assert.h>
 	<stdint.h>
 
-1472396523 c:\users\john\desktop\arcproximator\src\svg.h
+1472832194 c:\users\john\desktop\arcproximator\src\svg.h
 	<stdio.h>
 	<stdlib.h>
 	<string.h>
@@ -477,7 +494,7 @@
 	<stdio.h>
 	<string.h>
 
-1472814849 c:\users\john\desktop\arcproximator\src\out_of_sight.h
+1472832723 c:\users\john\desktop\arcproximator\src\out_of_sight.h
 	"math/ar_bezier3.h"
 	"math/ar_arc.h"
 	"graphics/ar_shader.h"
@@ -491,9 +508,57 @@
 	<assert.h>
 	<stdio.h>
 	<GL/freeglut.h>
-	<math.h>
-	"math/ar_arc_list.h"
-	"svg.h"
 
 1472577289 c:\users\john\desktop\arcproximator\src\arcs.h
+
+1472831056 c:\users\john\desktop\arcproximator\src\method_segments.h
+
+1472831935 source:c:\users\john\desktop\arcproximator\src\graphics\ar_vertex.c
+	"ar_vertex.h"
+	"ar_color.h"
+
+1472840104 source:c:\users\john\desktop\arcproximator\src\method_segments.c
+	<stdio.h>
+	<math.h>
+	<assert.h>
+	"math/ar_bezier3.h"
+	"graphics/ar_shader.h"
+	"graphics/ar_draw.h"
+	"graphics/ar_color.h"
+	<GL/glu.h>
+
+1472831516 c:\users\john\desktop\arcproximator\src\method_arcs.h
+	"graphics/ar_shader.h"
+
+1472838760 source:c:\users\john\desktop\arcproximator\src\method_stencil.c
+	"method_stencil.h"
+	"math/ar_arc.h"
+	"math/ar_arc_list.h"
+	"math/vec2.h"
+	"math/ar_bezier3.h"
+	"graphics/ar_vertex.h"
+	"graphics/ar_draw.h"
+	<math.h>
+	<stdio.h>
+	"svg.h"
+
+1472832555 c:\users\john\desktop\arcproximator\src\method_stencil.h
+	"graphics/ar_shader.h"
+
+1472840084 source:c:\users\john\desktop\arcproximator\src\method_arcs.c
+	"method_arcs.h"
+	"graphics/ar_draw.h"
+	"graphics/ar_shader.h"
+	"graphics/ar_vertex.h"
+	"math/ar_arc.h"
+	<assert.h>
+	<stdio.h>
+
+1472835455 source:c:\users\john\desktop\arcproximator\src\method_nvpr.c
+	<stdio.h>
+	<stdlib.h>
+	<assert.h>
+	"graphics/ar_shader.h"
+
+1472835413 c:\users\john\desktop\arcproximator\src\method_nvpr.h
 

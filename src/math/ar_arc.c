@@ -81,3 +81,8 @@ vec2 ar_arc_clamp(const struct ar_arc *arc, vec2 p){
 
     return v2dist2(p, arc->start) < v2dist2(p, arc->end) ? arc->start : arc->end;
 }
+
+void ar_arc_reverse(struct ar_arc *arc){
+    AR_SWAP(vec2, arc->start, arc->end);
+    arc->arc_type = !arc->arc_type;
+}

@@ -24,3 +24,33 @@ void ar_bezier3_points(const struct ar_bezier3 *curve, vec2 *points, int n, doub
         points[i] = ar_bezier3_at(curve, t);
     }
 }
+
+void ar_bezier3_split(const struct ar_bezier3 *curve, double t, struct ar_bezier3 *curves){
+    const vec2 *p = curve->control_points;
+    vec2 *q = curves[0].control_points;
+    vec2 *r = curves[1].control_points;
+
+    vec2 a = p[0];
+    vec2 b = p[1];
+    vec2 c = p[2];
+    vec2 d = p[3];
+
+    vec2 ab = v2lerp(a, b, t);
+    vec2 bc = v2lerp(b, c, t);
+    vec2 cd = v2lerp(c, d, t);
+
+    vec2 abc = v2lerp(ab, bc, t);
+    vec2 bcd = v2lerp(bc, cd, t);
+
+    vec2 abcd = v2lerp(abc, bcd, t);
+
+    q[0] = a;
+    q[1] = ab;
+    q[2] = abc;
+    q[3] = abcd;
+
+    r[0] = abcd;
+    r[1] = bcd;
+    r[2] = cd;
+    r[3] = d;
+}

@@ -39,5 +39,6 @@ int ar_ccw_arc_encloses(const struct ar_arc *arc, vec2 p);
 int ar_arc_encloses(const struct ar_arc *arc, vec2 p);
 vec2 ar_arc_clamp(const struct ar_arc *arc, vec2 p);
 int ar_arc_is_over_180(const struct ar_arc *arc);
+void ar_arc_reverse(struct ar_arc *arc);
 
 #endif

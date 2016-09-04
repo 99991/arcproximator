@@ -29,3 +29,19 @@ void ar_texture_bind(struct ar_texture *texture){
 void ar_texture_free(struct ar_texture *texture){
     glDeleteTextures(1, &texture->id);
 }
+
+void ar_texture_init_stencil(struct ar_texture *texture, int width, int height){
+    texture->width = width;
+    texture->height = height;
+    glGenTextures(1, &texture->id);
+
+    ar_texture_bind(texture);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL);
+}
