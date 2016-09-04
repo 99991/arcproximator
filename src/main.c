@@ -484,12 +484,12 @@ void make_stencil_shader(struct ar_shader *shader){
         uniform sampler2D u_1;
 
         void main(){
-            vec2 uv = v_data0.zw;
+            vec2 p = v_data0.zw;
             vec4 color = v_data1;
 
-            float r = dot(uv, uv);
+            float r2 = dot(p, p);
 
-            if (r > 1.0) discard;
+            if (r2 > 1.0) discard;
 
             gl_FragColor = color;
         }
