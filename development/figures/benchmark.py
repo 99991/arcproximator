@@ -37,7 +37,7 @@ def make_graph(g, path, path_nvpr):
     y2 = rows2[:, 3]
 
     g.plot(x0*1e-6, y0, ls="-.", color='black', label="stencil arcs")
-    g.plot(x1*1e-6, y1, ls="dotted", color='black', label="arcs")
+    g.plot(x1*1e-6, y1, ls="dotted", color='black', label="trapezoids")
     g.plot(x3*1e-6, y3, color='black', label="nvpr")
     g.plot(x2*1e-6, y2, '--', color='black', label="segments")
 
@@ -50,7 +50,6 @@ def make_graph(g, path, path_nvpr):
     g.set_ylim([0, 5])
 
 fig = plt.figure(num=None, figsize=(14, 5), dpi=100)
-
 """
 g = plt.subplot(2, 2, 3)
 image = scipy.misc.imread("../py/beziers.png")

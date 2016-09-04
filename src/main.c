@@ -18,6 +18,7 @@
 
 #include <GL/freeglut.h>
 
+/* slower rendering, but smoother outlines */
 #define DRAW_SMOOTH
 
 struct ar_window {
@@ -506,34 +507,45 @@ void make_arc_shader(struct ar_shader *shader){
         varying vec4 v_data2;
         varying vec4 v_data3;
 
+        float transparency(
+            vec2 c0, float r0, int type0,
+            vec2 c1, float r1, int type1,
+            vec2 p
+        ){
+            vec2 p0 = p - c0;
+            vec2 p1 = p - c1;
+
+            // Bounds in case of clockwise arc
+            float y0 = sqrt(r0*r0 - p0.x*p0.x);
+            float y1 = sqrt(r1*r1 - p1.x*p1.x);
+
+            // Bounds in case of line segment
+            if (type0 == 0) y0 = -y0;
+            if (type1 == 0) y1 = -y1;
+
+            // Bounds in case of counterclockwise arc
+            if (type0 == 2) y0 = p0.y;
+            if (type1 == 2) y1 = p1.y;
+
+            // Visible if within bounds
+            return y0 <= p0.y && p1.y <= y1 ? 1.0 : 0.0;
+        }
+
         void main(){
             vec2 p = v_data0.xy;
 
-            vec2 c_lower = v_data2.xy;
-            vec2 c_upper = v_data2.zw;
+            vec2 c0 = v_data2.xy;
+            vec2 c1 = v_data2.zw;
 
-            float r_lower = v_data3.x;
-            float r_upper = v_data3.y;
+            float r0 = v_data3.x;
+            float r1 = v_data3.y;
 
-            float type_lower = v_data3.z;
-            float type_upper = v_data3.w;
-
-            vec2 pa = p - c_lower;
-            vec2 pb = p - c_upper;
-
-            float ya = sqrt(r_lower*r_lower - pa.x*pa.x);
-            float yb = sqrt(r_upper*r_upper - pb.x*pb.x);
-
-            if (type_lower == 0.0) ya = -ya;
-            if (type_upper == 0.0) yb = -yb;
-            if (type_lower == 2.0) ya = pa.y;
-            if (type_upper == 2.0) yb = pb.y;
-
-            float alpha = ya <= pa.y && pb.y <= yb ? 1.0 : 0.0;
+            int type0 = int(v_data3.z);
+            int type1 = int(v_data3.w);
 
             vec4 color = v_data1;
 
-            color.a *= alpha;
+            color.a *= transparency(c0, r0, type0, c1, r1, type1, p);
 
             gl_FragColor = color;
         }
