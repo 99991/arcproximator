@@ -517,7 +517,7 @@
 	"ar_vertex.h"
 	"ar_color.h"
 
-1473065768 source:c:\users\john\desktop\arcproximator\src\method_segments.c
+1473065833 source:c:\users\john\desktop\arcproximator\src\method_segments.c
 	<stdio.h>
 	<math.h>
 	<assert.h>
@@ -542,7 +542,7 @@
 	<stdio.h>
 	"svg.h"
 
-1472832555 c:\users\john\desktop\arcproximator\src\method_stencil.h
+1473066135 c:\users\john\desktop\arcproximator\src\method_stencil.h
 	"graphics/ar_shader.h"
 
 1473019226 source:c:\users\john\desktop\arcproximator\src\method_arcs.c

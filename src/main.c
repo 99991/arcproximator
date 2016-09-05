@@ -321,7 +321,7 @@ void on_frame(void){
     glBeginQuery(GL_TIME_ELAPSED, timeElapsedQuery);
 
     switch (method){
-        case 0: render_svg(shader, vbo, mvp, projection); break;
+        case 0: render_svg(shader, vbo, mvp, projection, fbo_width, fbo_height); break;
         case 1: render_arcs(); break;
         case 2: render_segments(); break;
     }

@@ -398,41 +398,32 @@ void upload_svg(struct ar_shader *shader, GLuint vbo){
     ar_set_attributes(shader, vertices);
 }
 
-void render_svg(struct ar_shader *shader, GLuint vbo, mat4 mvp, mat4 projection){
-    GL_CHECK
+void render_svg(struct ar_shader *shader, GLuint vbo, mat4 mvp, mat4 projection, int width, int height){
     ar_shader_use(shader);
 
-    GL_CHECK
     glEnable(GL_STENCIL_TEST);
     glClearStencil(0);
 
-    GL_CHECK
     /* prepare writing to stencil buffer */
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
     glStencilFunc(GL_NEVER, 0, 1);
     glStencilOp(GL_INVERT, GL_INVERT, GL_INVERT);
 
-    GL_CHECK
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     ar_set_attributes(shader, NULL);
 
-    GL_CHECK
     ar_upload_model_view_projection(shader, mvp);
     glDrawArrays(GL_TRIANGLES, 0, n_vertices);
 
-    GL_CHECK
     /* prepare coloring stencil buffer */
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glStencilFunc(GL_EQUAL, 1, 1);
     glStencilOp(GL_ZERO, GL_ZERO, GL_ZERO);
 
-    GL_CHECK
     ar_upload_model_view_projection(shader, projection);
     struct ar_vertex rect_vertices[2*3];
-    ar_make_rect(rect_vertices, 0.0f, 0.0f, 4096.0f, 4096.0f, 0.0f, 0.0f, 0.0f, 0.0f, AR_BLACK);
+    ar_make_rect(rect_vertices, 0.0f, 0.0f, width, height, 0.0f, 0.0f, 0.0f, 0.0f, AR_BLACK);
     ar_draw(shader, rect_vertices, 2*3, GL_TRIANGLES, vbo);
 
-    GL_CHECK
     glDisable(GL_STENCIL_TEST);
-    GL_CHECK
 }
