@@ -1,11 +1,11 @@
-#include "method_stencil.h"
-#include "math/ar_arc.h"
-#include "math/ar_arc_list.h"
-#include "math/vec2.h"
-#include "math/ar_bezier3.h"
-#include "graphics/ar_vertex.h"
-#include "graphics/ar_draw.h"
-#include "graphics/ar_color.h"
+#include "ar_method_stencil.h"
+#include "../math/ar_arc.h"
+#include "../math/ar_arc_list.h"
+#include "../math/vec2.h"
+#include "../math/ar_bezier3.h"
+#include "../graphics/ar_vertex.h"
+#include "../graphics/ar_draw.h"
+#include "../graphics/ar_color.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -342,7 +342,7 @@ void ar_arc_vertices(const struct ar_arc *arc, struct ar_vertex *out_vertices, u
     out_vertices[5] = ar_vert(q.x, q.y, b_uv.x*scale, b_uv.y*scale, color);
 }
 
-#include "svg.h"
+#include "ar_svg.h"
 
 void prepare_svg(const char *path){
     ar_arc_list_init(output_arcs);

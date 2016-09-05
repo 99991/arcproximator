@@ -1,8 +1,8 @@
+#include "../graphics/ar_shader.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-
-#include "graphics/ar_shader.h"
 
 static GLuint nvpr_path;
 

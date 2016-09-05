@@ -54,3 +54,34 @@ void ar_bezier3_split(const struct ar_bezier3 *curve, double t, struct ar_bezier
     r[2] = cd;
     r[3] = d;
 }
+
+int ar_bezier3_subdivide(struct ar_bezier3 *curve, vec2 *points, int max_n, double max_angle){
+    vec2 *p = curve->control_points;
+    vec2 v = v2sub(p[1], p[0]);
+    int i;
+    double t = 0.0;
+    double eps = 0.001;
+    vec2 a = p[0];
+    points[0] = a;
+    for (i = 1; i < max_n - 1; i++){
+        while (t < 1.0){
+            t += eps;
+
+            vec2 b = ar_bezier3_at(curve, t);
+            vec2 w = v2sub(b, a);
+
+            if (v2angle2(v, w) > max_angle){
+                points[i] = a;
+                a = b;
+                v = w;
+                break;
+            }
+        }
+        if (t >= 1.0){
+            break;
+        }
+    }
+    points[i++] = p[3];
+
+    return i;
+}

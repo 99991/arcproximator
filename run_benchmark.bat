@@ -1,0 +1,2 @@
+bin\Release\arcproximator.exe "development/py/beziers.svg" "development/py/arcs.txt" "development/py/beziers.txt" > development\figures\results.txt
+bin\Release\arcproximator.exe "development/py/beziers2.svg" "development/py/arcs2.txt" "development/py/beziers2.txt" > development\figures\results2.txt

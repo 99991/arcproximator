@@ -17,28 +17,36 @@ def make_graph(g, path, path_nvpr):
     rows = read_array(path_nvpr)
     rows = np.array(rows)
 
-    x3 = rows[:, 0] * rows[:, 1]
-    y3 = rows[:, 2]
+    x = rows[:, 0] * rows[:, 1]
+    y = rows[:, 2]
 
     rows = read_array(path)
-    n = len(rows)/3
+    n = len(rows)/4
     rows0 = rows[:n]
     rows1 = rows[n:n*2]
-    rows2 = rows[n*2:]
+    rows2 = rows[n*2:n*3]
+    rows3 = rows[n*3:]
 
     rows0 = np.array(rows0)
     x0 = rows0[:, 1] * rows0[:, 2]
     y0 = rows0[:, 3]
+    
     rows1 = np.array(rows1)
     x1 = rows1[:, 1] * rows1[:, 2]
     y1 = rows1[:, 3]
+    
     rows2 = np.array(rows2)
     x2 = rows2[:, 1] * rows2[:, 2]
     y2 = rows2[:, 3]
+    
+    rows3 = np.array(rows3)
+    x3 = rows3[:, 1] * rows3[:, 2]
+    y3 = rows3[:, 3]
 
+    g.plot(x*1e-6, y, color='black', label="nvpr")
     g.plot(x0*1e-6, y0, ls="-.", color='black', label="stencil arcs")
+    g.plot(x3*1e-6, y3, color='lightgray', label="stencil segments")
     g.plot(x1*1e-6, y1, ls="dotted", color='black', label="trapezoids")
-    g.plot(x3*1e-6, y3, color='black', label="nvpr")
     g.plot(x2*1e-6, y2, '--', color='black', label="segments")
 
     g.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05), ncol=2, fancybox=True, shadow=True)

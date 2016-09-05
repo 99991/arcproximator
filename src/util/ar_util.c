@@ -41,3 +41,7 @@ int ar_ord(char c){
     if (c >= 'A' && c <= 'Z') return c - 'A' + 10;
     return -1;
 }
+
+double ar_deg2rad(double degrees){
+    return AR_PI/180.0 * degrees;
+}

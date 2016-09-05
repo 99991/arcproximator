@@ -1,6 +1,7 @@
-#include "method_stencil.h"
-#include "method_segments.h"
-#include "method_arcs.h"
+#include "methods/ar_method_stencil.h"
+#include "methods/ar_method_segments.h"
+#include "methods/ar_method_arcs.h"
+#include "methods/ar_method_stencil_segments.h"
 #include "math/ar_bezier3.h"
 #include "math/ar_arc.h"
 #include "graphics/ar_shader.h"
@@ -42,9 +43,10 @@ struct ar_texture fbo_stencil_texture[1];
 int max_fbo_size = 4096;
 
 /*
-0: stencil buffer
+0: stencil buffer arcs
 1: fill between arcs
 2: approximate with line segments
+3: stencil segments
 */
 int method = 0;
 
@@ -267,7 +269,7 @@ void on_frame(void){
         pixels = pixels_increment;
 
         method++;
-        if (method > 2){
+        if (method > 3){
             exit(0);
         }
     }
@@ -283,12 +285,14 @@ void on_frame(void){
         case 0: shader = &shaders[1]; break;
         case 1: shader = &shaders[2]; break;
         case 2: shader = &shaders[3]; break;
+        case 3: shader = &shaders[3]; break;
     }
 
     switch (method){
         case 0: upload_svg(shader, vbo); break;
         case 1: upload_arcs(shader, vbo); break;
         case 2: upload_segments(shader, vbo); break;
+        case 3: upload_stencil_segments(shader, vbo); break;
     }
 
     GL_CHECK
@@ -324,6 +328,7 @@ void on_frame(void){
         case 0: render_svg(); break;
         case 1: render_arcs(); break;
         case 2: render_segments(); break;
+        case 3: render_stencil_segments(); break;
     }
 
     glEndQuery(GL_TIME_ELAPSED);
@@ -487,9 +492,9 @@ void make_stencil_shader(struct ar_shader *shader){
             vec2 p = v_data0.zw;
             vec4 color = v_data1;
 
-            float r2 = dot(p, p);
+            float radius_squared = dot(p, p);
 
-            if (r2 > 1.0) discard;
+            if (radius_squared > 1.0) discard;
 
             gl_FragColor = color;
         }
@@ -588,9 +593,22 @@ int main(int argc, char **argv){
 
     init_fbo();
 
-    prepare_svg("development/py/beziers.svg");
-    prepare_arcs_renderer("development/py/arcs.txt");
-    prepare_segments("development/py/beziers.txt");
+    const char *svg_path = "development/py/beziers.svg";
+    const char *arcs_path = "development/py/arcs.txt";
+    const char *beziers_path = "development/py/beziers.txt";
+
+    if (argc != 4){
+        printf("Choosing default curve files\n");
+    }else{
+        svg_path = argv[1];
+        arcs_path = argv[2];
+        beziers_path = argv[3];
+    }
+
+    prepare_svg(svg_path);
+    prepare_arcs_renderer(arcs_path);
+    prepare_segments(beziers_path);
+    prepare_stencil_segments(beziers_path);
 
     work(0);
     glutMainLoop();

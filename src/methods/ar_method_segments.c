@@ -1,11 +1,11 @@
+#include "../math/ar_bezier3.h"
+#include "../graphics/ar_shader.h"
+#include "../graphics/ar_draw.h"
+#include "../graphics/ar_color.h"
+
 #include <stdio.h>
 #include <math.h>
 #include <assert.h>
-
-#include "math/ar_bezier3.h"
-#include "graphics/ar_shader.h"
-#include "graphics/ar_draw.h"
-#include "graphics/ar_color.h"
 
 #include <GL/glu.h>
 
@@ -14,47 +14,6 @@ static GLdouble coords[MAX_COORDS];
 static int coords_index = 0;
 static struct ar_vertex tess_vertices[MAX_COORDS];
 static int tess_vertex_index = 0;
-
-double angle_between(vec2 v, vec2 w){
-    v = v2normalize(v);
-    w = v2normalize(w);
-    return acos(v2dot(v, w));
-}
-
-double deg2rad(double degrees){
-    return AR_PI/180.0 * degrees;
-}
-
-int subdivide(struct ar_bezier3 *curve, vec2 *points, int n_max){
-    vec2 *p = curve->control_points;
-    vec2 v = v2sub(p[1], p[0]);
-    int i;
-    double t = 0.0;
-    double eps = 0.001;
-    vec2 a = p[0];
-    points[0] = a;
-    for (i = 1; i < n_max - 1; i++){
-        while (t < 1.0){
-            t += eps;
-
-            vec2 b = ar_bezier3_at(curve, t);
-            vec2 w = v2sub(b, a);
-
-            if (angle_between(v, w) > deg2rad(2.0)){
-                points[i] = a;
-                a = b;
-                v = w;
-                break;
-            }
-        }
-        if (t >= 1.0){
-            break;
-        }
-    }
-    points[i++] = p[3];
-
-    return i;
-}
 
 void CALLBACK begin_callback(GLenum mode){
     assert(mode == GL_TRIANGLES);
@@ -123,7 +82,7 @@ void prepare_segments(const char *path){
 
         int n = 256;
         vec2 points[n];
-        n = subdivide(curve, points, n);
+        n = ar_bezier3_subdivide(curve, points, n, ar_deg2rad(2.0));
         int i;
         for (i = 0; i < n; i++){
             int index = coords_index;

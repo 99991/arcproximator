@@ -106,19 +106,27 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/math/vec2.h" />
-		<Unit filename="src/method_arcs.c">
+		<Unit filename="src/methods/ar_method_arcs.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="src/method_arcs.h" />
-		<Unit filename="src/method_segments.c">
+		<Unit filename="src/methods/ar_method_arcs.h" />
+		<Unit filename="src/methods/ar_method_nvpr.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="src/method_segments.h" />
-		<Unit filename="src/method_stencil.c">
+		<Unit filename="src/methods/ar_method_nvpr.h" />
+		<Unit filename="src/methods/ar_method_segments.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="src/method_stencil.h" />
-		<Unit filename="src/svg.h" />
+		<Unit filename="src/methods/ar_method_segments.h" />
+		<Unit filename="src/methods/ar_method_stencil.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/methods/ar_method_stencil.h" />
+		<Unit filename="src/methods/ar_method_stencil_segments.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/methods/ar_method_stencil_segments.h" />
+		<Unit filename="src/methods/ar_svg.h" />
 		<Unit filename="src/util/ar_array.h" />
 		<Unit filename="src/util/ar_list.h" />
 		<Unit filename="src/util/ar_util.c">

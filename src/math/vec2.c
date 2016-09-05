@@ -93,3 +93,9 @@ double v2dist_line(vec2 p, vec2 a, vec2 b){
     vec2 q = v2lerp(a, b, u);
     return v2dist(p, q);
 }
+
+double v2angle2(vec2 v, vec2 w){
+    v = v2normalize(v);
+    w = v2normalize(w);
+    return acos(v2dot(v, w));
+}
