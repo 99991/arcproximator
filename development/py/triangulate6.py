@@ -606,9 +606,6 @@ def triangulate(mouse, points):
             if curve_a.a.y > curve_b.a.y:
                 curve_b, curve_a = curve_a, curve_b
 
-            assert(curve_a.a.y <= curve_b.a.y)
-            assert(curve_a.b.y <= curve_b.b.y)
-
             final_curves.append(curve_a)
             final_curves.append(curve_b)
 
@@ -616,8 +613,6 @@ def triangulate(mouse, points):
             draw_curve(curve_b)
             draw_line(curve_a.a, curve_b.a)
             draw_line(curve_a.b, curve_b.b)
-            assert(curve_a.a.x == curve_b.a.x)
-            assert(curve_a.b.x == curve_b.b.x)
 
             
         
@@ -687,17 +682,6 @@ if 1:
         points.append(p)
         angle += 0.7
 
-"""
-random.seed(1)
-points = []
-while len(points) < 5:
-    x = random.randint(0, width)
-    y = random.randint(0, height)
-    p = Point(x, y)
-
-    if not points or min(p.dist(q) for q in points) > 10:
-        points.append(p)
-"""
 master = tk.Tk()
 canvas = tk.Canvas(master, width=width, height=height)
 canvas.pack()
@@ -705,11 +689,6 @@ canvas.pack()
 def transform(p):
     p = Point(p.x, height - p.y - 1)
     p = Point(float(p.x), float(p.y))
-    if 0:
-        p.x -= 200
-        p.y -= 300
-        p.x *= 5
-        p.y *= 5
     return p
 
 def draw_grid(dx=100, dy=100, color='gray'):

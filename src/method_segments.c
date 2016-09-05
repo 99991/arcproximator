@@ -137,6 +137,19 @@ void prepare_segments(const char *path){
     gluTessEndContour(tess);
     gluTessEndPolygon(tess);
     gluDeleteTess(tess);
+
+#if 0
+    double area = 0.0;
+    for (j = 0; j < tess_vertex_index; j += 3){
+        struct ar_vertex *v = tess_vertices + j;
+        vec2 a = v2(v[0].x, v[0].y);
+        vec2 b = v2(v[1].x, v[1].y);
+        vec2 c = v2(v[2].x, v[2].y);
+        double triangle_area = fabs(0.5*v2det(v2sub(b, a), v2sub(c, a)));
+        area += triangle_area;
+    }
+    printf("area: %f, %f %% covered\n", area, area*100.0/800/800);
+#endif
 }
 
 void upload_segments(struct ar_shader *shader, GLuint vbo){

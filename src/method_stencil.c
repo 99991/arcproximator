@@ -370,9 +370,26 @@ void prepare_svg(const char *path){
         vertex_pointer += 6;
     }
 
-    n_vertices = vertex_pointer - vertices;
+    int vertices_written = vertex_pointer - vertices;
+    assert(n_vertices == vertices_written);
 
     ar_arc_list_free(output_arcs);
+
+#if 0
+    double area = 0.0;
+    int j;
+    for (j = 0; j < n_vertices; j += 3){
+        struct ar_vertex *v = vertices + j;
+        vec2 a = v2(v[0].x, v[0].y);
+        vec2 b = v2(v[1].x, v[1].y);
+        vec2 c = v2(v[2].x, v[2].y);
+        double triangle_area = fabs(0.5*v2det(v2sub(b, a), v2sub(c, a)));
+        if (triangle_area == triangle_area){
+            area += triangle_area;
+        }
+    }
+    printf("area: %f, %f %% covered\n", area, area*100.0/800/800);
+#endif
 }
 
 void upload_svg(struct ar_shader *shader, GLuint vbo){
