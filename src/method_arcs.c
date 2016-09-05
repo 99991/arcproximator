@@ -1,5 +1,6 @@
 #include "method_arcs.h"
 #include "graphics/ar_draw.h"
+#include "graphics/ar_color.h"
 #include "graphics/ar_shader.h"
 #include "graphics/ar_vertex.h"
 #include "math/ar_arc.h"

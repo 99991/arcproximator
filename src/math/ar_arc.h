@@ -12,17 +12,10 @@ enum ar_arc_type {
     AR_ARC_LINE,
 };
 
-/* TODO debug only */
-#include <stdint.h>
-#include "../graphics/ar_color.h"
-
 struct ar_arc {
     vec2 center, start, end;
     double radius;
     enum ar_arc_type arc_type;
-
-    /* TODO debug only */
-    uint32_t color;
 };
 
 void ar_arc_init(

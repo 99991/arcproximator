@@ -5,6 +5,7 @@
 #include "math/ar_bezier3.h"
 #include "graphics/ar_vertex.h"
 #include "graphics/ar_draw.h"
+#include "graphics/ar_color.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -248,7 +249,7 @@ void ar_fit(const struct ar_bezier3 *curve, double max_distance, int max_depth, 
         exit(-1);
     }
 #endif
-    /* TODO handle edge cases so bisection can work */
+
     double root_t = 0.5;
 
     vec2 join = ar_bezier3_at(curve, root_t);
@@ -256,7 +257,6 @@ void ar_fit(const struct ar_bezier3 *curve, double max_distance, int max_depth, 
     /* Ensure join really is on circle since intersection might be off. */
     join = v2add(center, v2scale(v2sub(join, center), radius));
 
-    /* TODO can get rid of four additions here */
     int a_clockwise = v2isright(join, a, v2add(a, tangent_ba));
     int d_clockwise = v2isright(join, d, v2add(d, tangent_cd));
 

@@ -179,7 +179,7 @@
 	<X11/Xmd.h>
 	<GL/glew.h>
 
-1473025570 source:c:\users\john\desktop\arcproximator\src\main.c
+1473066163 source:c:\users\john\desktop\arcproximator\src\main.c
 	"method_stencil.h"
 	"method_segments.h"
 	"method_arcs.h"
@@ -228,13 +228,11 @@
 
 1468330743 3.h"
 
-1472832130 source:c:\users\john\desktop\arcproximator\src\math\ar_arc.c
+1473095957 source:c:\users\john\desktop\arcproximator\src\math\ar_arc.c
 	"ar_arc.h"
 
-1472832130 c:\users\john\desktop\arcproximator\src\math\ar_arc.h
+1473095957 c:\users\john\desktop\arcproximator\src\math\ar_arc.h
 	"vec2.h"
-	<stdint.h>
-	"../graphics/ar_color.h"
 
 1469460258 cs/ar_color.h"
 
@@ -545,9 +543,10 @@
 1473066135 c:\users\john\desktop\arcproximator\src\method_stencil.h
 	"graphics/ar_shader.h"
 
-1473019226 source:c:\users\john\desktop\arcproximator\src\method_arcs.c
+1473095972 source:c:\users\john\desktop\arcproximator\src\method_arcs.c
 	"method_arcs.h"
 	"graphics/ar_draw.h"
+	"graphics/ar_color.h"
 	"graphics/ar_shader.h"
 	"graphics/ar_vertex.h"
 	"math/ar_arc.h"

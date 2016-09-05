@@ -393,7 +393,7 @@ void svg_parse_path(char *ptr, char *end){
         case 'a':
             while (ptr < end && svg_is_numeric(*ptr)){
                 svg_parse_numbers(ptr, end, &ptr, numbers, 7);
-                /* TODO handle properly */
+                /* graphics do not contain elliptic arcs, so this will do for now */
                 x1 = x0 + numbers[5];
                 y1 = y0 + numbers[6];
                 draw_line(x0, y0, x1, y1);
@@ -405,7 +405,7 @@ void svg_parse_path(char *ptr, char *end){
         case 'A':
             while (ptr < end && svg_is_numeric(*ptr)){
                 svg_parse_numbers(ptr, end, &ptr, numbers, 7);
-                /* TODO handle properly */
+                /* graphics do not contain elliptic arcs, so this will do for now */
                 x1 = numbers[5];
                 y1 = numbers[6];
                 draw_line(x0, y0, x1, y1);
