@@ -55,7 +55,6 @@ struct ar_bezier3_dist_info ar_bezier3_arcs_distance(
     const struct ar_bezier3 *curve,
     const struct ar_arc *arcs
 ){
-    /* TODO find better error measure */
     struct ar_bezier3_dist_info info;
     info.t = AR_DBL_INF;
     info.distance_squared = -AR_DBL_INF;
@@ -92,7 +91,6 @@ struct ar_bezier3_dist_info ar_bezier3_arc_distance(
     const struct ar_bezier3 *curve,
     const struct ar_arc *arc
 ){
-    /* TODO find better error measure */
     struct ar_bezier3_dist_info info;
     info.t = AR_DBL_INF;
     info.distance_squared = -AR_DBL_INF;

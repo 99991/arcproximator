@@ -44,14 +44,45 @@ class CubicBezier(object):
         
         return (curve0, curve1)
 
+def cubic_from_quadratic(q0, q1, q2):
+    p0 = q0
+    p1 = 1.0/3*q0 + 2.0/3*q1
+    p2 = 1.0/3*q2 + 2.0/3*q1
+    p3 = q2
+    return CubicBezier([p0, p1, p2, p3])
 
-def subdivide(curve, max_err, arcs, depth=10):
+def subdivide(curve, max_err, arcs, depth=15):
     p0, p1, p2, p3 = curve.points
+
+    eps = 1e-10
+
+    if p0.dist(p1) < eps and p2.dist(p3) < eps:
+        # line segment
+        return
+
+    if p0.dist(p1) < eps:
+        p1 = p2
+
+    if p2.dist(p3) < eps:
+        p2 = p1
+
+    # if parallel
+    if abs((p1 - p0).det(p3 - p2)) < eps:
+
+        # if on same line
+        if abs((p1 - p0).det(p3 - p0)) < eps:
+            # line segment
+            return
+
+        # force split
+        curve0, curve1 = curve.split(0.5)
+        subdivide(curve0, max_err, arcs, depth - 1)
+        subdivide(curve1, max_err, arcs, depth - 1)
+        return
 
     u0 = (p1 - p0).normalized()
     u1 = (p3 - p2).normalized()
 
-    #_, _, center = rotation_and_center(p0, p3, u0, u1)
     v = u0.det(u1)/(u0.dot(u1) - 1)*(p0 - p3)
     x = (p0.x + p3.x - v.y)/2
     y = (p0.y + p3.y + v.x)/2

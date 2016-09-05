@@ -15,12 +15,19 @@ curve = CubicBezier([
     Point(300, 100),
 ])
 
+curve = CubicBezier([
+    Point(200, 100),
+    Point(100, 100),
+    Point(400, 200),
+    Point(300, 200),
+])
+
 def foo(mouse):
     draw_line_strip(curve.points, 'grey')
     draw_line_strip(curve.sample())
 
     arcs = []
-    subdivide(curve, 1, arcs)
+    subdivide(curve, 0.01, arcs)
     print("%d arcs"%len(arcs))
     for i, arc in enumerate(arcs):
         draw_arc(arc, color=colors[i % len(colors)])
