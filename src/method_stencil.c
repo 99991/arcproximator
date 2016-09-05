@@ -12,6 +12,10 @@
 
 static int n_vertices;
 static struct ar_vertex *vertices;
+static float bounds_x0;
+static float bounds_y0;
+static float bounds_x1;
+static float bounds_y1;
 
 struct ar_bezier3_dist_info {
     double t;
@@ -347,7 +351,9 @@ void prepare_svg(const char *path){
 
     int n_arcs = output_arcs->n;
 
-    n_vertices = n_arcs*(3 + 6);
+    /* 3 for pivot triangle, 6 for arc cover geometry */
+    /* and 2*3 for all-covering geometry */
+    n_vertices = n_arcs*(3 + 6) + 2*3;
     vertices = malloc(n_vertices*sizeof(*vertices));
     struct ar_vertex *vertex_pointer = vertices;
     struct ar_arc_list_node *node;
@@ -364,14 +370,33 @@ void prepare_svg(const char *path){
         *vertex_pointer++ = ar_vert(a.x, a.y, 0.0f, 0.0f, AR_GRAY);
         *vertex_pointer++ = ar_vert(b.x, b.y, 0.0f, 0.0f, AR_GRAY);
 
-        ar_arc_vertices(arc, vertex_pointer, AR_GREEN);
+        ar_arc_vertices(arc, vertex_pointer, AR_BLACK);
         vertex_pointer += 6;
     }
 
-    int vertices_written = vertex_pointer - vertices;
-    assert(n_vertices == vertices_written);
-
     ar_arc_list_free(output_arcs);
+
+    n_vertices = vertex_pointer - vertices;
+
+    bounds_x0 = bounds_x1 = pivot.x;
+    bounds_y0 = bounds_y1 = pivot.y;
+
+    int i;
+    for (i = 0; i < n_vertices; i++){
+        float x = vertices[i].x;
+        float y = vertices[i].y;
+        if (x < bounds_x0) bounds_x0 = x;
+        if (y < bounds_y0) bounds_y0 = y;
+        if (x > bounds_x1) bounds_x1 = x;
+        if (y > bounds_y1) bounds_y1 = y;
+    }
+
+    ar_make_rect(
+        vertex_pointer,
+        bounds_x0, bounds_y0,
+        bounds_x1, bounds_y1,
+        0.0f, 0.0f, 0.0f, 0.0f,
+        AR_BLACK);
 
 #if 0
     double area = 0.0;
@@ -392,13 +417,11 @@ void prepare_svg(const char *path){
 
 void upload_svg(struct ar_shader *shader, GLuint vbo){
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(*vertices)*n_vertices, vertices);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(*vertices)*(n_vertices + 2*3), vertices);
     ar_set_attributes(shader, vertices);
 }
 
-void render_svg(struct ar_shader *shader, GLuint vbo, mat4 mvp, mat4 projection, int width, int height){
-    ar_shader_use(shader);
-
+void render_svg(void){
     glEnable(GL_STENCIL_TEST);
     glClearStencil(0);
 
@@ -407,10 +430,6 @@ void render_svg(struct ar_shader *shader, GLuint vbo, mat4 mvp, mat4 projection,
     glStencilFunc(GL_NEVER, 0, 1);
     glStencilOp(GL_INVERT, GL_INVERT, GL_INVERT);
 
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    ar_set_attributes(shader, NULL);
-
-    ar_upload_model_view_projection(shader, mvp);
     glDrawArrays(GL_TRIANGLES, 0, n_vertices);
 
     /* prepare coloring stencil buffer */
@@ -418,10 +437,7 @@ void render_svg(struct ar_shader *shader, GLuint vbo, mat4 mvp, mat4 projection,
     glStencilFunc(GL_EQUAL, 1, 1);
     glStencilOp(GL_ZERO, GL_ZERO, GL_ZERO);
 
-    ar_upload_model_view_projection(shader, projection);
-    struct ar_vertex rect_vertices[2*3];
-    ar_make_rect(rect_vertices, 0.0f, 0.0f, width, height, 0.0f, 0.0f, 0.0f, 0.0f, AR_BLACK);
-    ar_draw(shader, rect_vertices, 2*3, GL_TRIANGLES, vbo);
+    glDrawArrays(GL_TRIANGLES, n_vertices, 2*3);
 
     glDisable(GL_STENCIL_TEST);
 }
