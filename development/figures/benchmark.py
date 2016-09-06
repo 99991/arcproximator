@@ -43,9 +43,9 @@ def make_graph(g, path, path_nvpr):
     x3 = rows3[:, 1] * rows3[:, 2]
     y3 = rows3[:, 3]
 
-    g.plot(x*1e-6, y, color='black', label="nvpr")
+    g.plot(x*1e-6, y, color='0.7', label="nvpr")
     g.plot(x0*1e-6, y0, ls="-.", color='black', label="stencil arcs")
-    g.plot(x3*1e-6, y3, color='lightgray', label="stencil segments")
+    g.plot(x3*1e-6, y3, color='black', label="stencil segments")
     g.plot(x1*1e-6, y1, ls="dotted", color='black', label="trapezoids")
     g.plot(x2*1e-6, y2, '--', color='black', label="segments")
 
@@ -76,5 +76,5 @@ make_graph(g, 'results.txt', 'results_nvpr.txt')
 g = plt.subplot(1, 2, 2)
 make_graph(g, 'results2.txt', 'results2_nvpr.txt')
 
-plt.savefig("benchmark.pdf", bbox_inches="tight")
-#plt.show()
+#plt.savefig("benchmark.pdf", bbox_inches="tight")
+plt.show()

@@ -323,6 +323,49 @@ void ar_arc_vertices(const struct ar_arc *arc, struct ar_vertex *out_vertices, u
     vec2 center = arc->center;
     double radius = arc->radius;
 
+#if 0
+    /* should be better in theory, but is not in practice */
+    vec2 v, w;
+
+    int i;
+    switch (arc->arc_type){
+    case AR_ARC_LINE:
+        for (i = 0; i < 6; i++){
+            out_vertices[i] = ar_vert(0.0f, 0.0f, 0.0f, 0.0f, color);
+        }
+        return;
+    case AR_ARC_CLOCKWISE:
+        v = v2right(v2sub(a, center));
+        w = v2left(v2sub(b, center));
+        break;
+    case AR_ARC_COUNTERCLOCKWISE:
+        v = v2left(v2sub(a, center));
+        w = v2right(v2sub(b, center));
+        break;
+    }
+
+    double d = radius - v2dist(v2lerp(a, b, 0.5), center);
+
+    vec2 ba = v2sub(b, a);
+    double ba_len2 = v2len2(ba);
+    double vba = v2dot(v, ba);
+    double wba = v2dot(w, ba);
+    vec2 p = v2add(a, v2smul(d/sqrt(v2len2(v) - vba*vba/ba_len2), v));
+    vec2 q = v2add(b, v2smul(d/sqrt(v2len2(w) - wba*wba/ba_len2), w));
+
+    vec2 a_uv = v2smul(1.0/radius, v2sub(a, center));
+    vec2 b_uv = v2smul(1.0/radius, v2sub(b, center));
+    vec2 p_uv = v2smul(1.0/radius, v2sub(p, center));
+    vec2 q_uv = v2smul(1.0/radius, v2sub(q, center));
+
+    out_vertices[0] = ar_vert(a.x, a.y, a_uv.x, a_uv.y, color);
+    out_vertices[1] = ar_vert(p.x, p.y, p_uv.x, p_uv.y, color);
+    out_vertices[2] = ar_vert(b.x, b.y, b_uv.x, b_uv.y, color);
+
+    out_vertices[3] = out_vertices[2];
+    out_vertices[4] = out_vertices[1];
+    out_vertices[5] = ar_vert(q.x, q.y, q_uv.x, q_uv.y, color);
+#else
     vec2 a_uv = v2smul(1.0/radius, v2sub(a, center));
     vec2 b_uv = v2smul(1.0/radius, v2sub(b, center));
 
@@ -340,6 +383,7 @@ void ar_arc_vertices(const struct ar_arc *arc, struct ar_vertex *out_vertices, u
     out_vertices[3] = out_vertices[2];
     out_vertices[4] = out_vertices[1];
     out_vertices[5] = ar_vert(q.x, q.y, b_uv.x*scale, b_uv.y*scale, color);
+#endif
 }
 
 #include "ar_svg.h"

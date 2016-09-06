@@ -179,7 +179,7 @@
 	<X11/Xmd.h>
 	<GL/glew.h>
 
-1473107355 source:c:\users\john\desktop\arcproximator\src\main.c
+1473174598 source:c:\users\john\desktop\arcproximator\src\main.c
 	"methods/ar_method_stencil.h"
 	"methods/ar_method_segments.h"
 	"methods/ar_method_arcs.h"
@@ -614,7 +614,7 @@
 	<assert.h>
 	<GL/glu.h>
 
-1473104867 source:c:\users\john\desktop\arcproximator\src\methods\ar_method_stencil.c
+1473174712 source:c:\users\john\desktop\arcproximator\src\methods\ar_method_stencil.c
 	"ar_method_stencil.h"
 	"../math/ar_arc.h"
 	"../math/ar_arc_list.h"
@@ -634,7 +634,7 @@
 	<assert.h>
 	<stdint.h>
 
-1473106597 source:c:\users\john\desktop\arcproximator\src\methods\ar_method_stencil_segments.c
+1473108182 source:c:\users\john\desktop\arcproximator\src\methods\ar_method_stencil_segments.c
 	"ar_method_stencil_segments.h"
 	"../math/vec2.h"
 	"../math/ar_bezier3.h"
