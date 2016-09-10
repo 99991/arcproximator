@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <stdint.h>
 #include <GL/glew.h>
 #ifdef __APPLE__
@@ -14,11 +15,11 @@
 #include <stdlib.h>
 #include "MaxRectsBinPack.h"
 
-#define CHECK check_error(__LINE__);
+#define CHECK_GL check_error(__LINE__);
 
 #define STR(x) #x
 
-#define MAX_SHAPES 5000
+#define MAX_SHAPES 20000
 
 #define PI_F 3.14159265358979f
 
@@ -120,9 +121,11 @@ GLuint stencil_texture;
 GLuint depth_texture;
 GLuint timeElapsedQuery;
 GLuint vbo_immediate;
+GLuint vbo_cover_fbo;
 GLuint vbo_from_fbo_to_screen;
 GLuint vbo_direct;
 Vertices immediate_vertices;
+Vertices cover_fbo_vertices;
 Vertices from_fbo_to_screen_vertices;
 Vertices direct_vertices;
 Shader *color_shader;
@@ -311,21 +314,31 @@ double calculate_area(const Vertices &vertices){
 void draw_with_immediate_buffer(int n){
     init_fbo(color_shader, fbo_width, fbo_height, fbo);
 
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_immediate);
-
-    set_attributes(color_shader);
     begin_stencil();
-    glDrawArrays(GL_TRIANGLES, 0, immediate_vertices.size()*n/MAX_SHAPES);
+
+    // stencil
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_immediate);
+    set_attributes(color_shader);
+    glDrawArrays(GL_TRIANGLES, 0, immediate_vertices.size()/MAX_SHAPES*n);
+
     begin_stencil_covering();
-    glDrawArrays(GL_TRIANGLES, 0, immediate_vertices.size()*n/MAX_SHAPES);
+
+    // cover
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_cover_fbo);
+    set_attributes(color_shader);
+    glDrawArrays(GL_TRIANGLES, 0, cover_fbo_vertices.size()/MAX_SHAPES*n);
+
     end_stencil();
 
+    // prepare screen
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     init_fbo(texture_shader, screen_width, screen_height, 0);
     bind_texture(texture_shader, color_texture);
+
+    // from fbo to screen
     glBindBuffer(GL_ARRAY_BUFFER, vbo_from_fbo_to_screen);
     set_attributes(texture_shader);
-    glDrawArrays(GL_TRIANGLES, 0, from_fbo_to_screen_vertices.size()*n/MAX_SHAPES);
+    glDrawArrays(GL_TRIANGLES, 0, from_fbo_to_screen_vertices.size()/MAX_SHAPES*n);
 }
 
 void draw_directly(int n){
@@ -346,10 +359,19 @@ void draw_directly(int n){
     }
 }
 
+double sec(){
+    LARGE_INTEGER t, frequency;
+    QueryPerformanceCounter(&t);
+    QueryPerformanceFrequency(&frequency);
+    return t.QuadPart / (double)frequency.QuadPart;
+}
+
 void display(void){
+    double t = sec();
+
     static int n = 0;
     static int method = 0;
-    int increment = 100;
+    int increment = 1;
 
     n += increment;
     if (n > MAX_SHAPES){
@@ -374,18 +396,22 @@ void display(void){
 
     glEndQuery(GL_TIME_ELAPSED);
 
+    glFinish();
+    glFlush();
+
     glutSwapBuffers();
 
-    uint64_t t;
-    glGetQueryObjectui64v(timeElapsedQuery, GL_QUERY_RESULT, &t);
-    printf("%i %f\n", n, t*1e-6);
+    GLint available = 0;
+    while (!available){
+        glGetQueryObjectiv(timeElapsedQuery, GL_QUERY_RESULT_AVAILABLE, &available);
+    }
 
-    CHECK
-}
+    double dt = sec() - t;
+    uint64_t nsec;
+    glGetQueryObjectui64v(timeElapsedQuery, GL_QUERY_RESULT, &nsec);
+    printf("%i %f %f\n", n, nsec*1e-6, dt*1000.0);
 
-void work(int frame) {
-    glutPostRedisplay();
-    glutTimerFunc(20, work, frame + 1);
+    CHECK_GL
 }
 
 uint32_t rgba_bytes(uint32_t r, uint32_t g, uint32_t b, uint32_t a){
@@ -412,16 +438,16 @@ void init_vertices(){
     std::vector<rbp::RectSize> rectSizes;
 
     float angle = 0.0f;
-    float distance = 4.0f;
+    float distance = 2.0f;
 
     for (i = 0; i < n; i++){
-        float delta_radius = 6.0f;
+        float delta_radius = 3.0f;
         float radius = 50.0f + angle * delta_radius;
 
         float cx = screen_width*0.5f + cosf(angle)*radius;
         float cy = screen_height*0.5f + sinf(angle)*radius;
-        float r = 13.0f;
-        float s = r*0.7f;
+        float r = 5.0f;
+        float s = 4.0f;
 
         angle += distance / radius;
 
@@ -471,11 +497,16 @@ void init_vertices(){
         float u1 = (rect.x + rect.width) / (float)fbo_width;
         float v1 = (rect.y + rect.height) / (float)fbo_height;
         make_rect(from_fbo_to_screen_vertices, x0, y0, x1, y1, u0, v0, u1, v1, shape.color);
+        make_rect(cover_fbo_vertices, rect.x, rect.y, rect.x + rect.width, rect.y + rect.height, 0.0f, 0.0f, 1.0f, 1.0f, shape.color);
     }
 
     glGenBuffers(1, &vbo_immediate);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_immediate);
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*immediate_vertices.size(), immediate_vertices.data(), GL_STATIC_DRAW);
+
+    glGenBuffers(1, &vbo_cover_fbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_cover_fbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*cover_fbo_vertices.size(), cover_fbo_vertices.data(), GL_STATIC_DRAW);
 
     glGenBuffers(1, &vbo_from_fbo_to_screen);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_from_fbo_to_screen);
@@ -491,6 +522,7 @@ int main(int argc, char **argv) {
     glutInit(&argc, argv);
     glutCreateWindow("Benchmark");
     glutDisplayFunc(display);
+    glutIdleFunc(display);
 
     GLenum status = glewInit();
     if (status != GLEW_OK) {
@@ -543,8 +575,7 @@ int main(int argc, char **argv) {
 
     init_vertices();
 
-    CHECK
-    work(0);
+    CHECK_GL
     glutMainLoop();
     return 0;
 }

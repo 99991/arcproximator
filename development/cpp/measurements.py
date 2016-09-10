@@ -1,0 +1,28 @@
+from matplotlib import pyplot as plt
+from collections import defaultdict
+import numpy as np
+
+path = "measurements.txt"
+
+with open(path, "rb") as f:
+    lines = f.read().strip().split("\n")
+    rows = [line.split() for line in lines]
+    rows = [(int(n), float(t_gpu)) for n, t_gpu, t_cpu in rows]
+
+n = len(rows)
+rows0 = rows[:n/2]
+rows1 = rows[n/2:]
+
+fig = plt.figure()
+
+def plot(rows, i):
+    rows.sort()
+    ns = [n for n, t in rows]
+    ts = [t for n, t in rows]
+    
+    g = plt.subplot(1, 2, i)
+    g.plot(ns, ts, 'o', ms=1, color='black', alpha=0.1)
+
+plot(rows0, 1)
+plot(rows1, 2)
+plt.show()
