@@ -162,12 +162,6 @@ void render_from_fbo_to_screen(void){
     glDisable(GL_TEXTURE_2D);
 }
 
-void cleanup(void){
-    glDeleteTextures(1, &texture);
-    glDeleteTextures(1, &stencil_texture);
-    glDeleteFramebuffers(1, &fbo);
-}
-
 void display(void){
     static int pixels_increment = 256*256;
     static int pixels = 0;
@@ -182,20 +176,23 @@ void display(void){
 
     render_to_fbo();
     render_from_fbo_to_screen();
+
+    glFlush();
+    glFinish();
+
     glutSwapBuffers();
+
+    GLint available = 0;
+    while (!available){
+        glGetQueryObjectiv(timeElapsedQuery, GL_QUERY_RESULT_AVAILABLE, &available);
+    }
 
     uint64_t t;
     glGetQueryObjectui64v(timeElapsedQuery, GL_QUERY_RESULT, &t);
     printf("%i %i %f\n", width, height, t*1e-6);
     glDeleteQueries(1, &timeElapsedQuery);
 
-    //cleanup();
     CHECK
-}
-
-void work(int frame) {
-    glutPostRedisplay();
-    glutTimerFunc(20, work, frame + 1);
 }
 
 int main(int argc, char **argv) {
@@ -208,6 +205,7 @@ int main(int argc, char **argv) {
     printf("renderer: %s\n", glGetString(GL_RENDERER));
 #endif
     glutDisplayFunc(display);
+    glutIdleFunc(display);
 
     GLenum status = glewInit();
     if (status != GLEW_OK) {
@@ -235,7 +233,6 @@ int main(int argc, char **argv) {
     make_stencil_texture();
     make_fbo();
 
-    work(0);
     glutMainLoop();
     return 0;
 }

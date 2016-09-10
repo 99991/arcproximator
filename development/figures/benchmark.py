@@ -76,5 +76,5 @@ make_graph(g, 'results.txt', 'results_nvpr.txt')
 g = plt.subplot(1, 2, 2)
 make_graph(g, 'results2.txt', 'results_nvpr2.txt')
 
-plt.savefig("benchmark.pdf", bbox_inches="tight")
-#plt.show()
+#plt.savefig("benchmark.pdf", bbox_inches="tight")
+plt.show()

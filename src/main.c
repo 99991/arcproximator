@@ -261,56 +261,7 @@ void draw_fbo(void){
 
 void ar_arc_vertices(const struct ar_arc *arc, struct ar_vertex *out_vertices, uint32_t color);
 
-void draw2(void){
-    glViewport(0, 0, 800, 800);
-    mat4 projection = m4_ortho2d(0.0f, 800, 800, 0.0f);
-    mat23 world_to_screen = window.world_to_screen;
-    mat4 modelview = m4m23(world_to_screen);
-    mat4 mvp = m4mul(projection, modelview);
-
-    struct ar_shader *shader = &shaders[3];
-    ar_shader_use(shader);
-    ar_upload_model_view_projection(shader, mvp);
-
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-    struct ar_arc arc[1];
-
-    vec2 center = v2(400, 400);
-    double radius = 300;
-    static double a0 = 0.0;
-    static double a1 = 0.0;
-    a0 += 0.01/3.0;
-    a1 += 0.01/7.0;
-    vec2 start = v2add(center, v2polar(a0, radius));
-    vec2 end = v2add(center, v2polar(a1, radius));
-    ar_arc_init(arc, center, radius, start, end, AR_ARC_LINE);
-
-    int n = 100;
-    struct ar_vertex vertices[n];
-    vec2 points[n];
-    ar_arc_vertices(arc, vertices, AR_GREEN);
-
-    ar_draw(shader, vertices, 2*3, GL_TRIANGLES, vbo);
-
-    ar_arc_points(arc, points, n, 0.0, 1.0);
-    int i;
-    for (i = 0; i < n; i++){
-        vec2 p = points[i];
-        vertices[i] = ar_vert(p.x, p.y, 0.0f, 0.0f, AR_BLACK);
-    }
-    ar_draw(shader, vertices, n, GL_LINE_STRIP, vbo);
-
-    glutSwapBuffers();
-    GL_CHECK
-}
-
 void on_frame(void){
-    //draw2();
-    //return;
-
     static int pixels = 0;
     int pixels_increment = 256*256;
 
@@ -367,9 +318,7 @@ void on_frame(void){
     ar_upload_model_view_projection(shader, mvp);
     GL_CHECK
 
-    GL_CHECK
     GLuint timeElapsedQuery;
-
     glGenQueries(1, &timeElapsedQuery);
     GL_CHECK
 
@@ -386,21 +335,23 @@ void on_frame(void){
 
     draw_fbo();
 
+    glFinish();
+    glFlush();
+
     glutSwapBuffers();
+
+    GLint available = 0;
+    while (!available){
+        glGetQueryObjectiv(timeElapsedQuery, GL_QUERY_RESULT_AVAILABLE, &available);
+    }
 
     GL_CHECK
     uint64_t t;
     glGetQueryObjectui64v(timeElapsedQuery, GL_QUERY_RESULT, &t);
-    GL_CHECK
     printf("%d %d %d %f\n", method, fbo_width, fbo_height, t*1e-6);
     GL_CHECK
     glDeleteQueries(1, &timeElapsedQuery);
     GL_CHECK
-}
-
-void work(int frame){
-    glutPostRedisplay();
-    glutTimerFunc(20, work, frame + 1);
 }
 
 void on_move(int x, int y){
@@ -636,6 +587,7 @@ int main(int argc, char **argv){
     glutKeyboardFunc(on_key_down);
     glutKeyboardUpFunc(on_key_up);
     glutDisplayFunc(on_frame);
+    glutIdleFunc(on_frame);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -659,7 +611,6 @@ int main(int argc, char **argv){
     prepare_segments(beziers_path);
     prepare_stencil_segments(beziers_path);
 
-    work(0);
     glutMainLoop();
     return 0;
 }

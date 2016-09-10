@@ -179,7 +179,7 @@
 	<X11/Xmd.h>
 	<GL/glew.h>
 
-1473174598 source:c:\users\john\desktop\arcproximator\src\main.c
+1473542758 source:c:\users\john\desktop\arcproximator\src\main.c
 	"methods/ar_method_stencil.h"
 	"methods/ar_method_segments.h"
 	"methods/ar_method_arcs.h"
