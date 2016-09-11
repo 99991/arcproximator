@@ -13,7 +13,7 @@ n = len(rows)
 rows0 = rows[:n/2]
 rows1 = rows[n/2:]
 
-fig = plt.figure()
+fig = plt.figure(num=None, figsize=(14, 5), dpi=100)
 
 def plot(rows, i):
     rows.sort()
@@ -21,8 +21,12 @@ def plot(rows, i):
     ts = [t for n, t in rows]
     
     g = plt.subplot(1, 2, i)
-    g.plot(ns, ts, 'o', ms=1, color='black', alpha=0.1)
+    g.plot(ns, ts, 'o', ms=1, color='black', alpha=0.05)#, label=label)
+    #g.legend(loc="upper left", fancybox=True, shadow=True)
+    plt.xlabel('number of rectangles')
+    plt.ylabel('time [milliseconds]')
 
-plot(rows0, 1)
-plot(rows1, 2)
-plt.show()
+plot(rows0, 2)#, "drawn with intermediate buffer")
+plot(rows1, 1)#, "drawn directly")
+plt.savefig("api_overhead.pdf", bbox_inches="tight")
+#plt.show()

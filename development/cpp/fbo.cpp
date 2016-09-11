@@ -19,12 +19,24 @@
 
 #define STR(x) #x
 
-#define MAX_SHAPES 20000
-
 #define PI_F 3.14159265358979f
 
 #define MAX_ATTRIBUTES 5
 #define MAX_UNIFORMS 5
+
+#define MAX_SHAPES 20000
+
+float box_outer_radius = 5.0f;
+float box_inner_radius = 4.0f;
+float box_grow_radius  = 2.0f;
+float delta_radius     = 3.0f;
+float inner_radius     = 50.0f;
+
+int screen_width = 1024;
+int screen_height = 1024;
+
+int fbo_width = 2048;
+int fbo_height = 2048;
 
 bool check_shader_compile_status(GLuint obj) {
     GLint status;
@@ -130,12 +142,6 @@ Vertices from_fbo_to_screen_vertices;
 Vertices direct_vertices;
 Shader *color_shader;
 Shader *texture_shader;
-
-int screen_width = 1024;
-int screen_height = 1024;
-
-int fbo_width = 2048;
-int fbo_height = 2048;
 
 void check_error(int line){
     GLenum error = glGetError();
@@ -335,10 +341,23 @@ void draw_with_immediate_buffer(int n){
     init_fbo(texture_shader, screen_width, screen_height, 0);
     bind_texture(texture_shader, color_texture);
 
+#if 0
+    // to dump fbo content to screen
+    Vertices vertices;
+    make_rect(vertices, 0.0f, 0.0f, screen_width, screen_height);
+    GLuint vbo;
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    set_attributes(texture_shader);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*vertices.size(), vertices.data(), GL_STATIC_DRAW);
+    glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+    glDeleteBuffers(1, &vbo);
+#else
     // from fbo to screen
     glBindBuffer(GL_ARRAY_BUFFER, vbo_from_fbo_to_screen);
     set_attributes(texture_shader);
     glDrawArrays(GL_TRIANGLES, 0, from_fbo_to_screen_vertices.size()/MAX_SHAPES*n);
+#endif
 }
 
 void draw_directly(int n){
@@ -388,12 +407,10 @@ void display(void){
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glBeginQuery(GL_TIME_ELAPSED, timeElapsedQuery);
-
     switch (method){
         case 0: draw_with_immediate_buffer(n); break;
         case 1: draw_directly(n); break;
     }
-
     glEndQuery(GL_TIME_ELAPSED);
 
     glFinish();
@@ -438,18 +455,17 @@ void init_vertices(){
     std::vector<rbp::RectSize> rectSizes;
 
     float angle = 0.0f;
-    float distance = 2.0f;
 
     for (i = 0; i < n; i++){
-        float delta_radius = 3.0f;
-        float radius = 50.0f + angle * delta_radius;
+        float radius = inner_radius + angle * delta_radius;
 
         float cx = screen_width*0.5f + cosf(angle)*radius;
         float cy = screen_height*0.5f + sinf(angle)*radius;
-        float r = 5.0f;
-        float s = 4.0f;
 
-        angle += distance / radius;
+        float r = box_outer_radius;
+        float s = box_inner_radius;
+
+        angle += box_grow_radius / radius;
 
         Shape shape;
         uint32_t color = nice_colors[i % nice_colors.size()];
