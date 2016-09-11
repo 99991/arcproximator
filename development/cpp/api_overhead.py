@@ -21,12 +21,11 @@ def plot(rows, i):
     ts = [t for n, t in rows]
     
     g = plt.subplot(1, 2, i)
-    g.plot(ns, ts, 'o', ms=1, color='black', alpha=0.05)#, label=label)
-    #g.legend(loc="upper left", fancybox=True, shadow=True)
+    g.plot(ns, ts, 'o', ms=1, color='black', alpha=0.05, rasterized=True)
     plt.xlabel('number of rectangles')
     plt.ylabel('time [milliseconds]')
 
-plot(rows0, 2)#, "drawn with intermediate buffer")
-plot(rows1, 1)#, "drawn directly")
+plot(rows0, 2)
+plot(rows1, 1)
 plt.savefig("api_overhead.pdf", bbox_inches="tight")
 #plt.show()
