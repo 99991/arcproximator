@@ -27,7 +27,7 @@ def foo(mouse):
     draw_line_strip(curve.sample())
 
     arcs = []
-    subdivide(curve, 0.01, arcs)
+    subdivide(curve, 1.0, arcs)
     print("%d arcs"%len(arcs))
     for i, arc in enumerate(arcs):
         draw_arc(arc, color=colors[i % len(colors)])

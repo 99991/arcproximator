@@ -95,8 +95,9 @@ def subdivide(curve, max_err, arcs, depth=15):
 
     join = center + radius*(join - center).normalized()
 
-    arc0 = arc_from_points_and_normal(p0, join, u0.left(), join.is_left_of(p1, p0), False)
-    arc1 = arc_from_points_and_normal(p3, join, u1.left(), join.is_right_of(p3, p2), True)
+    arc0 = arc_from_points_and_normal(p0, join, u0.left(), join.is_left_of(p1, p0))
+    arc1 = arc_from_points_and_normal(p3, join, u1.left(), join.is_right_of(p3, p2))
+    arc1 = reversed(arc1)
 
     d2, t, p, q = curve.dist2(arc0, arc1)
 

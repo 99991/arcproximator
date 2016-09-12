@@ -43,7 +43,7 @@ pc = middle - center
 d = radius - ((a + b)*0.5 - center).length()
 
 peak = middle + pc.scaled(d)
-g.text(25, 51, r'$d$', fontsize=20)
+g.text(25, 51, r'$h$', fontsize=20)
 g.text(62, 6, r'$\mathbf{a}$', fontsize=20)
 g.text(-33, 31, r'$\mathbf{b}$', fontsize=20)
 g.text(62, 47, r'$\mathbf{p}$', fontsize=20)

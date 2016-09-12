@@ -46,7 +46,7 @@ angle = np.deg2rad(angle)
 
 px = center1[0] + cos(angle)*radius1
 py = center1[1] + sin(angle)*radius1
-ax.text(center0[0] + radius0 + 3, center0[1] + 5, r'$\mathbf{J}$', fontsize=20)
+ax.text(center0[0] + radius0 + 3, center0[1] + 5, r'$\mathbf{j}$', fontsize=20)
 ax.text(center0[0] + radius0 + 3, center0[1] - 10, r'$\mathbf{a}_1$', fontsize=20)
 ax.text(center0[0] + radius0 - 11, center0[1] - 9, r'$\mathbf{b}_0$', fontsize=20)
 ax.text(px - 4, py - 13, r'$\mathbf{b}_1$', fontsize=20)
