@@ -130,7 +130,7 @@ path = Path(control_points, commands)
 
 fig = plt.figure()
 ax = fig.add_subplot(1, 3, 1)
-ax.set_title('Bézier curve'.decode('utf-8'))
+#ax.set_title('Bézier curve'.decode('utf-8'))
 patch = patches.PathPatch(path, facecolor='none')
 ax.add_patch(patch)
 
@@ -159,7 +159,7 @@ ax = fig.add_subplot(1, 3, 2)
 
 points = approximate_bezier(control_points, 20*pi/180)
 x, y, t = zip(*points)
-ax.set_title(("%d segments, 20°"%(len(points) - 1)).decode('utf-8'))
+#ax.set_title(("%d segments, 20°"%(len(points) - 1)).decode('utf-8'))
 plt.plot(x, y, color='black')
 
 draw_common(control_points)
@@ -168,7 +168,7 @@ ax = fig.add_subplot(1, 3, 3)
 
 points = approximate_bezier(control_points, 5*pi/180)
 x, y, t = zip(*points)
-ax.set_title(("%d segments, 5°"%(len(points) - 1)).decode('utf-8'))
+#ax.set_title(("%d segments, 5°"%(len(points) - 1)).decode('utf-8'))
 plt.plot(x, y, color='black')
 
 draw_common(control_points)
