@@ -1,6 +1,11 @@
 from __future__ import print_function
 from approximate import *
 
+# This python code decomposes some Bezier paths into pseudo trapezoids.
+# It is not very robust or fast.
+# Attempts to make this more efficient and robust have been suspended due to
+# other methods being faster.
+
 def intersections_circle_circle(a_circle, b_circle):
     a = a_circle.center
     b = b_circle.center
